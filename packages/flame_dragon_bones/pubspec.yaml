@@ -1,0 +1,24 @@
+name: flame_dragon_bones
+description: >-
+  DragonBones skeletal animation support for the Flame game engine. Wraps the
+  pure-Dart `dragonbones` runtime and renders armatures on Canvas via
+  drawVertices, including deformable meshes.
+version: 0.0.1-dev.1
+repository: https://github.com/RafaelBarbosatec/flame_dragon_bones
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.0
+  dragonbones:
+    path: ../dragonbones
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flame_lint: ^1.4.0

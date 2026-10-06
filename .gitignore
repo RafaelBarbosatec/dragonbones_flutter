@@ -1,0 +1,14 @@
+# Oracle runtime (compiled, fetched by fetch_runtime.sh)
+tool/ground_truth/vendor/
+
+# Dart / Flutter
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store

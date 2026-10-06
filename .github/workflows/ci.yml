@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Verifies the committed reference dumps are actually reproducible from the
+  # official DragonBones runtime — i.e. the oracle really is the oracle.
+  oracle:
+    name: Oracle dumps reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build official runtime
+        run: tool/ground_truth/fetch_runtime.sh
+      - name: Regenerate dumps
+        run: tool/ground_truth/run_all.sh
+      - name: Assert dumps unchanged
+        run: |
+          if ! git diff --quiet -- tool/ground_truth/out; then
+            echo "::error::Committed reference dumps differ from freshly generated ones."
+            git diff --stat -- tool/ground_truth/out
+            exit 1
+          fi
+          echo "Reference dumps are reproducible."
+
+  # The runtime is pure Dart with zero dependencies, so it is analysed and
+  # tested without Flutter.
+  runtime:
+    name: dragonbones (pure Dart)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/dragonbones
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.11.0'
+      - run: dart pub get
+      - run: dart analyze --no-fatal-infos
+      - run: dart test --reporter expanded

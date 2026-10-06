@@ -1,0 +1,18 @@
+name: dragonbones
+description: >-
+  A pure-Dart runtime for DragonBones skeletal animation (format 5.x). Reads
+  DragonBones Pro exports and evaluates armatures, bone timelines and mesh
+  deformation. No Flutter dependency.
+version: 0.0.1-dev.1
+repository: https://github.com/RafaelBarbosatec/flame_dragon_bones
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+# Intentionally ZERO runtime dependencies: the runtime must be verifiable with a
+# bare Dart SDK (no Flutter, no platform channels), and stay usable on web.
+dependencies:
+
+dev_dependencies:
+  test: ^1.25.0
