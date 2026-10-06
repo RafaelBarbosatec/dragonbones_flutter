@@ -32,7 +32,6 @@ class DemoPage extends StatefulWidget {
 }
 
 class _DemoPageState extends State<DemoPage> {
-  DragonBonesAssets? _assets;
   DragonBonesPlayer? _player;
   List<String> _animations = const <String>[];
   String? _animation;
@@ -64,7 +63,6 @@ class _DemoPageState extends State<DemoPage> {
 
       if (!mounted) return;
       setState(() {
-        _assets = assets;
         _player = player;
         _animations = animations;
         _animation = animations.first;
