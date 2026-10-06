@@ -18,7 +18,10 @@ which are not committed. Generate them once, then run:
 
 ```bash
 cd example
-flutter create .                    # adds the platform folders, keeps lib/ and assets/
+flutter create .                    # generates the platform folders
+git checkout -- lib/main.dart       # flutter create overwrites it — this committed
+                                    # example is the one you want
+rm -f test/widget_test.dart         # boilerplate that flutter create adds
 flutter run                         # pick a device, or: flutter run -d linux / -d macos
 ```
 
