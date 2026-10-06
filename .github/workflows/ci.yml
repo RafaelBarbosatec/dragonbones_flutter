@@ -43,5 +43,13 @@ jobs:
         with:
           sdk: '3.11.0'
       - run: dart pub get
-      - run: dart analyze --no-fatal-infos
-      - run: dart test --reporter expanded
+      # NOTE: `--no-fatal-infos` does not exist for `dart analyze` (that is a
+      # Flutter flag); infos are already non-fatal here, warnings are fatal.
+      - run: dart analyze
+      - name: Test
+        run: |
+          if [ -d test ]; then
+            dart test --reporter expanded
+          else
+            echo "no tests yet"
+          fi
