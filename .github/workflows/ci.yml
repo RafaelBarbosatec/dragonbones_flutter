@@ -30,7 +30,9 @@ jobs:
           echo "Reference dumps are reproducible."
 
   # The runtime is pure Dart with zero dependencies, so it is analysed and
-  # tested without Flutter.
+  # tested without Flutter. The oracle diff is the real test: it replays the
+  # fixture frame by frame and compares every bone matrix and every slot's draw
+  # data against the official runtime. No GPU, no eyeballing.
   runtime:
     name: dragonbones (pure Dart)
     runs-on: ubuntu-latest
@@ -48,9 +50,6 @@ jobs:
       - run: dart analyze
       - name: Structural check (parse fixtures)
         run: dart run tool/parse_check.dart
-      # The real test: replay the fixture frame by frame and diff every bone
-      # matrix against the dumps produced by the OFFICIAL runtime. This is what
-      # keeps the port honest — it needs no GPU and no manual inspection.
       - name: Diff against the official runtime (oracle)
         run: dart run tool/check_against_oracle.dart
       - name: Test
@@ -60,3 +59,29 @@ jobs:
           else
             echo "no tests yet"
           fi
+
+  # Compiles and smoke-tests the Canvas renderer. There is no GPU on a runner,
+  # so this cannot judge how it *looks* — but it does prove the renderer wires
+  # up: every slot resolves its atlas, nothing is silently skipped, and drawing
+  # a full animation loop raises nothing.
+  renderer:
+    name: dragonbones_flutter (analyze + render)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/dragonbones_flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.2'
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --reporter expanded
+      - name: Analyze the example app
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze

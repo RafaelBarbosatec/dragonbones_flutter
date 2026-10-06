@@ -58,8 +58,30 @@ cleanly. See `doc/FINDINGS.md` for the full investigation.
 | Oracle harness (node + official runtime) | ✅ working — both fixtures dump |
 | Reference dumps committed | ✅ `tool/ground_truth/out/*.json` |
 | Dart runtime port | ✅ **milestone 1 verified** — `Dragon` (sprites, bone timelines) matches the official runtime to ~5e-7 |
-| `drawVertices` renderer for Flame | 🚧 not started |
-| Example Flame app | 🚧 not started |
+| Canvas renderer (`update` + `render`), no engine coupling | ✅ sprites |
+| Example Flutter app | ✅ `example/` — run it to see it |
+| Deform meshes / `drawVertices` | 🚧 milestone 2 |
+
+### The renderer is not coupled to any engine
+
+`packages/dragonbones_flutter` depends on Flutter only — **not on Flame**. It
+exposes two methods, so it drops into anything:
+
+```dart
+player.update(dt);     // advance the animation
+player.render(canvas); // draw the pose
+```
+
+| Where | How |
+| --- | --- |
+| Plain Flutter app | `DragonBonesWidget`, or your own `CustomPainter` |
+| Flame game | call the two methods from a `Component` |
+| Bonfire | call them from a `GameComponent` |
+| Headless test | assert on `armature.buildDrawList()` |
+
+The renderer never mutates engine objects: the runtime is driven through a
+renderer-less factory and the pose is read back as a `SlotDrawData` list. That is
+also why the geometry is verifiable without a GPU.
 
 ### Milestone 1 result
 

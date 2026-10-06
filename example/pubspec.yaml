@@ -1,0 +1,29 @@
+name: dragonbones_example
+description: Example app drawing a DragonBones animation on a Flutter Canvas.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dragonbones_flutter:
+    path: ../packages/dragonbones_flutter
+
+dev_dependencies:
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/Dragon_ske.json
+    - assets/Dragon_tex.json
+    - assets/Dragon_tex.png
+    # The 龙 fixture (deformable meshes + IK) also sits in assets/, but it is not
+    # listed here because the renderer cannot draw meshes yet. Add these two
+    # lines plus the PNG when mesh support lands:
+    #   - assets/龙_ske.json
+    #   - assets/龙_tex.json
+    #   - assets/龙_tex.png

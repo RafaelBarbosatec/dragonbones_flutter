@@ -1,0 +1,27 @@
+name: dragonbones_flutter
+description: >-
+  Draw DragonBones skeletal animations on a Flutter Canvas. Framework-agnostic:
+  `update(dt)` + `render(Canvas)`, plus a ready-made widget. No Flame dependency,
+  so it drops into any Flutter project, a Flame component, or Bonfire.
+version: 0.0.1-dev.1
+repository: https://github.com/RafaelBarbosatec/flame_dragon_bones
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dragonbones:
+    path: ../dragonbones
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+# NOTE: no `assets:` section on purpose. The renderer takes an already-decoded
+# `ui.Image`, so it never touches the bundle itself; the example app declares
+# whatever assets it wants to load.
