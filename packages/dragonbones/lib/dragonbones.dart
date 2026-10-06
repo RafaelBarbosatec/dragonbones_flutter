@@ -13,7 +13,6 @@
  */
 library dragonbones;
 
-import 'dart:convert' as convert;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -42,6 +41,7 @@ part 'src/animation/timeline_state.dart';
 part 'src/animation/animation_state.dart';
 part 'src/animation/animation.dart';
 part 'src/factory/base_factory.dart';
+part 'src/factory/headless_factory.dart';
 
 /// JavaScript-compatible remainder (`a % b` truncates towards zero).
 double _jsMod(double a, double b) => a - b * (a / b).truncateToDouble();

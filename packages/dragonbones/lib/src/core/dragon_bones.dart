@@ -204,9 +204,21 @@ class DragonBones {
 
 /// Minimal clock. The oracle harness advances the armature directly, so the
 /// clock only needs to exist for API compatibility.
+///
+/// Faithful port of `.ref/dragonBones-ts/animation/WorldClock.ts` (the
+/// clock-attached objects are advanced like upstream, though nothing attaches
+/// to it in the headless harness).
+abstract class IAnimatable {
+  void advanceTime(double passedTime);
+  WorldClock? get clock;
+  set clock(WorldClock? value);
+}
+
 class WorldClock {
   double time;
   double timeScale = 1.0;
+
+  final List<IAnimatable> _animatebles = <IAnimatable>[];
 
   WorldClock([this.time = 0.0]);
 
@@ -224,6 +236,24 @@ class WorldClock {
       time -= passedTime;
     } else {
       time += passedTime;
+    }
+
+    for (var i = 0, l = _animatebles.length; i < l; ++i) {
+      final animateble = _animatebles[i];
+      animateble.advanceTime(passedTime);
+    }
+  }
+
+  void add(IAnimatable value) {
+    if (_animatebles.indexOf(value) < 0 && value != this) {
+      _animatebles.add(value);
+    }
+  }
+
+  void remove(IAnimatable value) {
+    final index = _animatebles.indexOf(value);
+    if (index >= 0) {
+      _animatebles.removeAt(index);
     }
   }
 }

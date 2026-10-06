@@ -57,9 +57,27 @@ cleanly. See `doc/FINDINGS.md` for the full investigation.
 | --- | --- |
 | Oracle harness (node + official runtime) | ✅ working — both fixtures dump |
 | Reference dumps committed | ✅ `tool/ground_truth/out/*.json` |
-| Dart runtime port | 🚧 not started |
+| Dart runtime port | ✅ **milestone 1 verified** — `Dragon` (sprites, bone timelines) matches the official runtime to ~5e-7 |
 | `drawVertices` renderer for Flame | 🚧 not started |
 | Example Flame app | 🚧 not started |
+
+### Milestone 1 result
+
+```
+  rest     2 frames, 19 bones, max error 4.945e-7  OK
+  stand   31 frames, 19 bones, max error 4.997e-7  OK
+  walk    21 frames, 19 bones, max error 4.983e-7  OK
+  jump     6 frames, 19 bones, max error 4.987e-7  OK
+  fall     6 frames, 19 bones, max error 4.989e-7  OK
+
+8712 comparisons, 0 mismatches (tolerance 0.0001)
+RESULT: PASS
+```
+
+That is ~5e-7, i.e. the rounding precision of the reference dumps themselves —
+the port is effectively exact. `dart analyze` is clean and both checks run in CI.
+
+Not yet: deform meshes / FFD, IK constraints (the `龙` fixture), and the renderer.
 
 ## Fixtures
 

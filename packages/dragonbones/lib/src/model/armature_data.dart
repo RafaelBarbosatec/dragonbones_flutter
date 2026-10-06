@@ -140,6 +140,17 @@ class ArmatureData extends BaseObject {
     }
   }
 
+  /// @internal
+  ///
+  /// Animation caching is not used by this port (`cacheFrameRate` stays 0, so
+  /// `Bone.update`/`Slot.update` are always called with `cacheFrameIndex < 0`).
+  /// These two entry points exist so the armature layer can transcribe the
+  /// upstream cache branches verbatim; they are never reached.
+  int setCacheFrame(Matrix globalTransformMatrix, Transform transform) => 0;
+
+  /// @internal
+  void getCacheFrame(Matrix globalTransformMatrix, Transform transform, int arrayOffset) {}
+
   void addBone(BoneData value) {
     if (this.bones.containsKey(value.name)) {
       return;

@@ -46,6 +46,13 @@ jobs:
       # NOTE: `--no-fatal-infos` does not exist for `dart analyze` (that is a
       # Flutter flag); infos are already non-fatal here, warnings are fatal.
       - run: dart analyze
+      - name: Structural check (parse fixtures)
+        run: dart run tool/parse_check.dart
+      # The real test: replay the fixture frame by frame and diff every bone
+      # matrix against the dumps produced by the OFFICIAL runtime. This is what
+      # keeps the port honest — it needs no GPU and no manual inspection.
+      - name: Diff against the official runtime (oracle)
+        run: dart run tool/check_against_oracle.dart
       - name: Test
         run: |
           if [ -d test ]; then

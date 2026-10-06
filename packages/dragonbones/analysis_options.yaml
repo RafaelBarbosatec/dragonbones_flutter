@@ -1,0 +1,16 @@
+# This runtime is a *faithful transcription* of the upstream DragonBones
+# TypeScript (see doc/FINDINGS.md for why). Upstream deliberately keeps members
+# that a given milestone does not exercise yet — IK helpers, constraint hooks,
+# engine-side render hooks, blend-mode plumbing. In a transcription those read
+# as "unused", which is expected rather than a mistake, so those two lints are
+# silenced here to keep `dart analyze` focused on errors and real bugs.
+#
+# Do NOT add broad ignores here. Everything else should stay loud.
+analyzer:
+  errors:
+    unused_element: ignore
+    unused_field: ignore
+    # Transcribed `as` casts from the TypeScript are kept even where Dart can
+    # prove them redundant: they document the upstream static type at the
+    # transposition point and make the port easier to diff against .ref/.
+    unnecessary_cast: ignore
