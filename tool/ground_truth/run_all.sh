@@ -13,6 +13,11 @@ for anim in stand walk jump fall; do
     "$anim" "$OUT/Dragon_$anim.json"
 done
 
+# pose de repouso: sem play() -> valida hierarquia de ossos e composição de
+# matriz SEM a camada de animação (checkpoint intermediário do port)
+node tool/ground_truth/dump.js "$FIX/Dragon_ske.json" "$FIX/Dragon_tex.json" \
+  - "$OUT/Dragon_rest.json"
+
 # asset 龙 (chinês): 60 ossos, malhas deformáveis, IK
 node tool/ground_truth/dump.js "$FIX/龙_ske.json" "$FIX/龙_tex.json" \
   stand "$OUT/Long_stand.json"

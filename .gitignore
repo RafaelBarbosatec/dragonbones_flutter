@@ -12,3 +12,6 @@ pubspec.lock
 .vscode/
 *.iml
 .DS_Store
+
+# Local reference material (upstream sources kept for porting)
+.ref/
