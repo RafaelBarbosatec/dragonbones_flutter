@@ -875,6 +875,43 @@ abstract class Slot extends TransformObject {
   /// @private
   Object? get meshDisplay => this._meshDisplay;
 
+  // ---- public view for renderers -------------------------------------------
+  //
+  // The runtime keeps these members as they are upstream (many with a `_`
+  // prefix). Renderers live outside this library, so they need a way in; these
+  // getters are read-only on purpose — the runtime owns the state.
+
+  /// The atlas entry currently displayed, or null.
+  TextureData? get textureData => this._textureData;
+
+  /// Geometry of the current display when it is a deformable mesh, else null.
+  GeometryData? get geometryData => this._geometryData;
+
+  /// Anchor that sits on the slot origin, in display pixels.
+  double get pivotX => this._pivotX;
+  double get pivotY => this._pivotY;
+
+  /// Draw order within the armature.
+  int get zOrder => this._zOrder;
+
+  /// DragonBones blend mode enum value (`BlendMode.Normal` is 0).
+  int get blendMode => this._blendMode;
+
+  /// Whether the slot should be drawn at all.
+  bool get isVisible => this._visible;
+
+  /// Slot colour as `[aM, rM, gM, bM, aO, rO, gO, bO]`.
+  List<double> get colorValues => <double>[
+    this._colorTransform.alphaMultiplier,
+    this._colorTransform.redMultiplier,
+    this._colorTransform.greenMultiplier,
+    this._colorTransform.blueMultiplier,
+    this._colorTransform.alphaOffset,
+    this._colorTransform.redOffset,
+    this._colorTransform.greenOffset,
+    this._colorTransform.blueOffset,
+  ];
+
   /// - The display object that the slot displays at this time.
   Object? get display => this._display;
   set display(Object? value) {

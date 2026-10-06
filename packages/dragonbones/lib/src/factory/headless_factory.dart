@@ -108,9 +108,20 @@ class HeadlessFactory extends BaseFactory {
     Armature armature,
   ) {
     final slot = HeadlessSlot();
-    slot.init(slotData, armature, null, null);
+    // The displays must be non-null even headlessly: `Slot.update` bails out
+    // early when `_display` is null, which would silently skip the whole
+    // transform update (and therefore the draw geometry). The official engines
+    // pass real bitmap/mesh objects here; placeholders stand in for those.
+    slot.init(slotData, armature, HeadlessDisplay(), HeadlessDisplay());
     return slot;
   }
+}
+
+/// Stand-in for an engine's bitmap/mesh object. Never drawn — it exists so the
+/// slot machinery (which branches on the display being non-null) runs normally.
+class HeadlessDisplay {
+  @override
+  String toString() => '[HeadlessDisplay]';
 }
 
 /// @internal

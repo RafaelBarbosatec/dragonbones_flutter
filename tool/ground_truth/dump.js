@@ -124,8 +124,10 @@ function dumpState(armature) {
     return {
       name: s.name,
       displayIndex: s.displayIndex,
-      color: [r(s._colorTransform.aM), r(s._colorTransform.rM), r(s._colorTransform.gM), r(s._colorTransform.bM),
-              r(s._colorTransform.aO), r(s._colorTransform.rO), r(s._colorTransform.gO), r(s._colorTransform.bO)],
+      color: [r(s._colorTransform.alphaMultiplier), r(s._colorTransform.redMultiplier),
+              r(s._colorTransform.greenMultiplier), r(s._colorTransform.blueMultiplier),
+              r(s._colorTransform.alphaOffset), r(s._colorTransform.redOffset),
+              r(s._colorTransform.greenOffset), r(s._colorTransform.blueOffset)],
       matrix: [r(s.globalTransformMatrix.a), r(s.globalTransformMatrix.b),
                r(s.globalTransformMatrix.c), r(s.globalTransformMatrix.d),
                r(s.globalTransformMatrix.tx), r(s.globalTransformMatrix.ty)],

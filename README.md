@@ -64,20 +64,26 @@ cleanly. See `doc/FINDINGS.md` for the full investigation.
 ### Milestone 1 result
 
 ```
-  rest     2 frames, 19 bones, max error 4.945e-7  OK
-  stand   31 frames, 19 bones, max error 4.997e-7  OK
-  walk    21 frames, 19 bones, max error 4.983e-7  OK
-  jump     6 frames, 19 bones, max error 4.987e-7  OK
-  fall     6 frames, 19 bones, max error 4.989e-7  OK
+  rest     2 frames, 19 bones,  36 slot draw-data, max err 4.945e-7  OK
+  stand   31 frames, 19 bones, 558 slot draw-data, max err 5.000e-7  OK
+  walk    21 frames, 19 bones, 378 slot draw-data, max err 4.997e-7  OK
+  jump     6 frames, 19 bones, 108 slot draw-data, max err 4.987e-7  OK
+  fall     6 frames, 19 bones, 108 slot draw-data, max err 4.992e-7  OK
 
-8712 comparisons, 0 mismatches (tolerance 0.0001)
+33660 numeric comparisons, 0 mismatches (tolerance 0.0001)
 RESULT: PASS
 ```
 
-That is ~5e-7, i.e. the rounding precision of the reference dumps themselves —
-the port is effectively exact. `dart analyze` is clean and both checks run in CI.
+Checked per frame: every bone's global matrix, **and** every slot's draw data —
+world matrix, pivot, quad size, atlas region, z-order, visibility, blend mode and
+colour. That is the complete geometry a renderer needs, so drawing it is a thin,
+low-risk step rather than guesswork.
 
-Not yet: deform meshes / FFD, IK constraints (the `龙` fixture), and the renderer.
+~5e-7 is the rounding precision of the reference dumps themselves, so the port is
+effectively exact. `dart analyze` is clean and both checks run in CI.
+
+Not yet: deform meshes / FFD, IK constraints (the `龙` fixture), and the canvas
+renderer.
 
 ## Fixtures
 
