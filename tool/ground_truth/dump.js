@@ -109,12 +109,38 @@ function dumpState(armature) {
              r(b.globalTransformMatrix.c), r(b.globalTransformMatrix.d),
              r(b.globalTransformMatrix.tx), r(b.globalTransformMatrix.ty)],
   }));
-  const slots = armature.getSlots().map((s) => ({
-    name: s.name,
-    displayIndex: s.displayIndex,
-    color: [r(s._colorTransform.aM), r(s._colorTransform.rM), r(s._colorTransform.gM), r(s._colorTransform.bM),
-            r(s._colorTransform.aO), r(s._colorTransform.rO), r(s._colorTransform.gO), r(s._colorTransform.bO)],
-  }));
+  const slots = armature.getSlots().map((s) => {
+    // Everything a renderer needs to place a sprite: the slot's world matrix,
+    // the pivot that anchors it, and the atlas region to sample. This mirrors
+    // what EgretSlot._updateFrame / _identityTransform compute.
+    const td = s._textureData || null;
+    const region = td ? td.region : null;
+    const atlasScale = td && td.parent ? td.parent.scale : 1.0;
+    const armatureScale = armature.armatureData.scale;
+    const scale = atlasScale * armatureScale;
+    const rotated = td ? !!td.rotated : false;
+    const regionW = region ? region.width : 0;
+    const regionH = region ? region.height : 0;
+    return {
+      name: s.name,
+      displayIndex: s.displayIndex,
+      color: [r(s._colorTransform.aM), r(s._colorTransform.rM), r(s._colorTransform.gM), r(s._colorTransform.bM),
+              r(s._colorTransform.aO), r(s._colorTransform.rO), r(s._colorTransform.gO), r(s._colorTransform.bO)],
+      matrix: [r(s.globalTransformMatrix.a), r(s.globalTransformMatrix.b),
+               r(s.globalTransformMatrix.c), r(s.globalTransformMatrix.d),
+               r(s.globalTransformMatrix.tx), r(s.globalTransformMatrix.ty)],
+      pivot: [r(s._pivotX), r(s._pivotY)],
+      region: region ? [r(region.x), r(region.y), r(regionW), r(regionH)] : null,
+      textureName: td ? td.name : null,
+      rotated,
+      // drawn quad size = region size, swapped when the atlas entry is rotated
+      quadSize: [r((rotated ? regionH : regionW) * scale), r((rotated ? regionW : regionH) * scale)],
+      visible: !!s._visible,
+      zOrder: s._zOrder === undefined ? 0 : s._zOrder,
+      blendMode: s._blendMode === undefined ? 0 : s._blendMode,
+      displayType: s._geometryData ? 'mesh' : (td ? 'image' : null),
+    };
+  });
   return { bones, slots };
 }
 
