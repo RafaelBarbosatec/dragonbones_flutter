@@ -1,11 +1,13 @@
-// Minimal example: draw a DragonBones animation on a plain Flutter Canvas.
+// Minimal example: draw DragonBones animations on a plain Flutter Canvas.
 //
-// No game engine — just `update(dt)` + `render(canvas)` driven by the
-// provided widget. See example/README.md for how to run it.
+// The character list comes from `asset_catalog.dart`, generated from the
+// directories under `assets/` — every character in the repository's fixture
+// set, so the app doubles as a viewer for all of them. See example/README.md.
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import 'asset_catalog.dart';
 import 'head_follow_page.dart';
 
 void main() {
@@ -34,65 +36,97 @@ class DemoPage extends StatefulWidget {
 }
 
 class _DemoPageState extends State<DemoPage> {
+  /// Opens on a character with several animations and a mesh-free rig.
+  static const String _initial = 'mecha_1004d_show';
+
+  DragonBonesAssets? _bones;
   DragonBonesPlayer? _player;
+  List<String> _armatures = const <String>[];
   List<String> _animations = const <String>[];
+  String _character = _initial;
+  String? _armature;
   String? _animation;
   Object? _error;
-
-  final examples = {
-    'dragon': ('dragon', 'Dragon'),
-    'mecha_1004d_show': ('mecha_1004d_show', 'mecha_1004d'),
-    'mecha_1004d': ('mecha_1004d', 'mecha_1004d'),
-    'mecha_1502b': ('mecha_1502b', 'mecha_1502b'),
-    '龙': ('龙', 'armatureName'),
-  };
-
-  String _selectedExample = 'mecha_1004d_show';
-
-  late (String, String) choice;
 
   @override
   void initState() {
     super.initState();
-    choice = examples[_selectedExample]!;
     _load();
   }
 
+  /// Loads the selected character and shows its first armature.
   Future<void> _load() async {
     try {
-      final example = examples[_selectedExample];
-      if (example == null) {
-        throw StateError('Example not found: $_selectedExample');
-      }
-
-      choice = example;
-
-      final assets = await DragonBonesAssets.loadAsset(
+      final bones = await DragonBonesAssets.loadAsset(
         bundle: rootBundle,
-        skeleton: 'assets/${choice.$1}/ske.json',
-        texture: 'assets/${choice.$1}/tex.json',
-        image: 'assets/${choice.$1}/tex.png',
+        skeleton: 'assets/$_character/ske.json',
+        texture: 'assets/$_character/tex.json',
+        image: 'assets/$_character/tex.png',
       );
 
-      final armature = assets.buildArmature(choice.$2);
-      if (armature == null) {
-        throw StateError('armature "Dragon" not found in the asset');
+      final names = bones.factory.getDragonBonesData(bones.name)?.armatureNames;
+      final armatures = names ?? const <String>[];
+      if (armatures.isEmpty) {
+        throw StateError('no armature in assets/$_character');
       }
 
-      final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
-      final animations = armature.armatureData.animationNames;
-      player.play(animations.first);
-
       if (!mounted) return;
-      setState(() {
-        _player = player;
-        _animations = animations;
-        _animation = animations.first;
-      });
+      _bones = bones;
+      _armatures = armatures;
+      _show(armatures.first);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error);
+      setState(() {
+        _bones = null;
+        _player = null;
+        _armatures = const <String>[];
+        _animations = const <String>[];
+        _error = error;
+      });
     }
+  }
+
+  /// Builds [armature] from the loaded character and plays its first animation.
+  void _show(String armature) {
+    final bones = _bones;
+    if (bones == null) {
+      return;
+    }
+
+    final built = bones.buildArmature(armature);
+    if (built == null) {
+      setState(() => _error = StateError('armature "$armature" not found'));
+      return;
+    }
+
+    final player = DragonBonesPlayer(built, resolveImage: bones.imageFor);
+    final animations = built.armatureData.animationNames;
+    if (animations.isNotEmpty) {
+      player.play(animations.first);
+    }
+
+    setState(() {
+      _player = player;
+      _armature = armature;
+      _animations = animations;
+      _animation = animations.isEmpty ? null : animations.first;
+      _error = null;
+    });
+  }
+
+  /// Switches character: drop everything, then load the new one.
+  void _select(String character) {
+    setState(() {
+      _character = character;
+      _bones = null;
+      _player = null;
+      _armatures = const <String>[];
+      _animations = const <String>[];
+      _armature = null;
+      _animation = null;
+      _error = null;
+    });
+    _load();
   }
 
   @override
@@ -140,63 +174,37 @@ class _DemoPageState extends State<DemoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Text('Exemplo '),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedExample,
-                        items: <DropdownMenuItem<String>>[
-                          for (final entry in examples.entries)
-                            DropdownMenuItem<String>(
-                              value: entry.key,
-                              child: Text(entry.key),
-                            ),
-                        ],
-                        onChanged: (String? value) {
-                          if (value == null || value == _selectedExample) {
-                            return;
-                          }
-                          setState(() {
-                            _selectedExample = value;
-                            _error = null;
-                            _player = null;
-                            _animations = const <String>[];
-                            _animation = null;
-                          });
-                          _load();
-                        },
-                      ),
-                    ),
-                  ],
+                _picker<String>(
+                  label: 'Character',
+                  value: _character,
+                  values: kExampleAssets,
+                  onChanged: (value) {
+                    if (value != null && value != _character) {
+                      _select(value);
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
-                Row(
-                  children: <Widget>[
-                    const Text('Animation '),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _animation,
-                        items: <DropdownMenuItem<String>>[
-                          for (final name in _animations)
-                            DropdownMenuItem<String>(
-                                value: name, child: Text(name)),
-                        ],
-                        onChanged: _animations.isEmpty
-                            ? null
-                            : (String? value) {
-                                if (value == null || value == _animation) {
-                                  return;
-                                }
-                                setState(() => _animation = value);
-                              },
-                      ),
-                    ),
-                  ],
+                _picker<String>(
+                  label: 'Armature',
+                  value: _armature,
+                  values: _armatures,
+                  onChanged: (value) {
+                    if (value != null && value != _armature) {
+                      _show(value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _picker<String>(
+                  label: 'Animation',
+                  value: _animation,
+                  values: _animations,
+                  onChanged: (value) {
+                    if (value != null && value != _animation) {
+                      setState(() => _animation = value);
+                    }
+                  },
                 ),
               ],
             ),
@@ -204,12 +212,37 @@ class _DemoPageState extends State<DemoPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             child: Text(
-              'update(dt) + render(canvas) — no game engine involved.',
+              '${kExampleAssets.length} characters, the repository fixtures — '
+              'update(dt) + render(canvas), no game engine involved.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _picker<T>({
+    required String label,
+    required T? value,
+    required List<T> values,
+    required void Function(T?) onChanged,
+  }) {
+    return Row(
+      children: <Widget>[
+        SizedBox(width: 96, child: Text(label)),
+        Expanded(
+          child: DropdownButton<T>(
+            isExpanded: true,
+            value: value,
+            items: <DropdownMenuItem<T>>[
+              for (final item in values)
+                DropdownMenuItem<T>(value: item, child: Text('$item')),
+            ],
+            onChanged: values.isEmpty ? null : onChanged,
+          ),
+        ),
+      ],
     );
   }
 }

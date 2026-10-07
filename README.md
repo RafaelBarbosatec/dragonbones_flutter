@@ -314,10 +314,16 @@ rule set it uses is `package:lints/core.yaml`, not `package:lints/recommended`.
 `packages/dragonbones/analysis_options.yaml` mirrors the scored set exactly, so a
 clean local `dart analyze` is the same clean run pub.dev sees.
 
-The atlas **images** are fetched, not vendored: the geometry oracle reads regions
-and names out of the texture JSON and never opens the PNGs, so the 11 MB of
-images stay out of the repository. `--with-images` grabs them when you want
-pixels.
+The fixture atlas **images** are fetched, not vendored: the geometry oracle reads
+regions and names out of the texture JSON and never opens the PNGs, so the 12 MB
+of images stay out of `test/fixtures/` — `fetch_fixtures.sh --with-images` grabs
+them when you want pixels.
+
+The example app is the deliberate exception. `example/assets/` **does** carry the
+pictures (14 MB), because pixels are the point of a viewer you are meant to run,
+and every character there is checked in CI: parsed, built, animated, and each
+atlas's `SubTexture` regions verified against the real PNG
+(`tool/assets/check_example_assets.dart`).
 
 ## Releases
 

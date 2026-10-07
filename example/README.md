@@ -1,7 +1,8 @@
 # Example — DragonBones on a plain Flutter Canvas
 
-Draws the `Dragon` fixture and lets you switch between its animations
-(`stand`, `walk`, `jump`, `fall`).
+Plays any of the **46 characters** bundled under `assets/` — the fixtures the
+tests and the oracle harness run on — with drop-downs for character, armature
+and animation.
 
 There is **no game engine here**. The renderer is driven by two calls:
 
@@ -109,13 +110,35 @@ The `dragonbones_flutter` package re-exports the runtime types, so
 
 ## Assets
 
-`assets/` holds the same DragonBones fixtures used by the tests and by the
-oracle harness (exported with DragonBones Pro 5.6, format 5.5). They come from
-the assets shipped with
+`assets/` holds one directory per character, each with the same three files:
+`ske.json`, `tex.json` and `tex.png` (DragonBones Pro 5.6 exports, format 5.5).
+
+Most of them are the Unity SDK demo assets, copied from the repository's own
+fixtures — `test/fixtures/unity/`, fetched by
+`tool/ground_truth/fetch_fixtures.sh --with-images` — with each file's name prefix
+trimmed: `mecha_1004d/mecha_1004d_ske.json` arrives here as
+`mecha_1004d/ske.json`. `dragon` and `龙` predate that and come from
 [Godot-DragonBones](https://github.com/DragonBones/Godot-DragonBones)
 (`demo/dragonbones_demo/assets`).
 
-The `龙` fixture is present too: it has deformable meshes and IK, which the
-renderer does **not** draw yet (mesh support is the next milestone). Loading it
-works, and `DragonBonesPlayer.skippedMeshSlots` reports how many slots were
-skipped — useful for checking exactly what is missing.
+The character list is **generated**, not hand-kept: it is written both into
+`lib/asset_catalog.dart` and into the `assets:` section of `pubspec.yaml`, because
+Flutter has no recursive asset globbing and a directory that is not listed never
+reaches the app.
+
+```bash
+cd ../packages/dragonbones
+dart run tool/assets/check_example_assets.dart --write   # regenerate the lists
+dart run tool/assets/check_example_assets.dart           # verify (also runs in CI)
+```
+
+Verifying parses every skeleton and atlas with the runtime, builds every
+armature, plays the first animation for 24 frames, and checks each atlas's
+`SubTexture` regions against the actual PNG — currently **70 armatures, 139
+animations, 509 draw items, 42 of them meshes**.
+
+Some of these characters need features the runtime parses but does not evaluate
+yet — animated IK, `SlotZIndex`, `SlotAlpha` / `BoneAlpha`, path constraints and
+`Surface` bones. They load and animate anyway, which is exactly what the viewer
+is for; [Limitations](https://docs.page/RafaelBarbosatec/dragonbones_flutter/limitations)
+lists what is missing.

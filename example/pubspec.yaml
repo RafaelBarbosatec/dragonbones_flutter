@@ -15,12 +15,57 @@ dependencies:
 dev_dependencies:
   flutter_lints: ^4.0.0
 
+# Every directory under assets/ is declared here, one per character. Flutter has
+# no recursive asset globbing, so a directory that is not listed simply never
+# reaches the app -- and the list has to track the files. It is generated, and
+# `tool/assets/check_example_assets.dart` (run in CI) fails if this list, the
+# generated Dart catalogue and the directories on disk disagree.
 flutter:
   uses-material-design: true
   assets:
+    - assets/bounding_box_tester/
+    - assets/bullet_01/
     - assets/dragon/
+    - assets/floor_board/
+    - assets/mecha_1002_101d_light/
+    - assets/mecha_1002_101d_show/
     - assets/mecha_1004d/
     - assets/mecha_1004d_show/
+    - assets/mecha_1406/
     - assets/mecha_1502b/
+    - assets/mecha_2903/
+    - assets/progress_bar/
+    - assets/skin_1502b/
+    - assets/weapon_1000/
+    - assets/weapon_1004_show/
+    - assets/you_xin/body/
+    - assets/you_xin/suit1/2010600a/
+    - assets/you_xin/suit1/2010600a_1/
+    - assets/you_xin/suit1/20208003/
+    - assets/you_xin/suit1/20208003_1/
+    - assets/you_xin/suit1/20208003_2/
+    - assets/you_xin/suit1/20208003_3/
+    - assets/you_xin/suit1/20405006/
+    - assets/you_xin/suit1/20509005/
+    - assets/you_xin/suit1/20703016/
+    - assets/you_xin/suit1/20703016_1/
+    - assets/you_xin/suit1/2080100c/
+    - assets/you_xin/suit1/2080100e/
+    - assets/you_xin/suit1/2080100e_1/
+    - assets/you_xin/suit1/20803005/
+    - assets/you_xin/suit1/2080500b/
+    - assets/you_xin/suit1/2080500b_1/
+    - assets/you_xin/suit2/20106010/
+    - assets/you_xin/suit2/20106010_1/
+    - assets/you_xin/suit2/20208006/
+    - assets/you_xin/suit2/20208006_1/
+    - assets/you_xin/suit2/20208006_2/
+    - assets/you_xin/suit2/20208006_3/
+    - assets/you_xin/suit2/2040600b/
+    - assets/you_xin/suit2/2040600b_1/
+    - assets/you_xin/suit2/20509007/
+    - assets/you_xin/suit2/20703020/
+    - assets/you_xin/suit2/20703020_1/
+    - assets/you_xin/suit2/20801015/
+    - assets/you_xin/suit2/2080b003/
     - assets/龙/
-    

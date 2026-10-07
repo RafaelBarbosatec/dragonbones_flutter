@@ -201,10 +201,16 @@ tool/ground_truth/fetch_fixtures.sh   # Unity SDK demo assets (JSON, ~1.6 MB)
 tool/ground_truth/run_all.sh          # regenerate every dump
 ```
 
-The atlas **images** (11 MB) are deliberately not committed: the geometry oracle
-reads regions and names out of the texture JSON and never opens the PNG, so the
-sweep runs entirely offline without them. `fetch_fixtures.sh --with-images`
+The fixture atlas **images** (12 MB) are deliberately not committed: the geometry
+oracle reads regions and names out of the texture JSON and never opens the PNG,
+so the sweep runs entirely offline without them. `fetch_fixtures.sh --with-images`
 fetches them when you want pixels.
+
+They *are* committed where they are actually needed, under `example/assets/` next
+to the app that draws them. `tool/assets/check_example_assets.dart` (gated in CI)
+loads every one of those characters through the runtime — parsing, building each
+armature, playing its first animation — and cross-checks each atlas against its
+PNG, so the bundled copies cannot rot.
 
 ## Repository layout
 

@@ -16,7 +16,10 @@ pubspec.lock
 # Local reference material (upstream sources kept for porting)
 .ref/
 
-# Atlas images for the Unity SDK fixtures: 11 MB, and the geometry oracle never
+# Atlas images for the Unity SDK fixtures: 12 MB, and the geometry oracle never
 # opens them (it reads regions/names from the tex JSON). Fetch with
-# `tool/ground_truth/fetch_fixtures.sh --with-images` when you need pixels.
+# `tool/ground_truth/fetch_fixtures.sh --with-images` when you want pixels.
+#
+# The example app is the exception: it needs real pixels to draw, so its copies
+# under example/assets/ ARE committed, and CI checks each one against its atlas.
 test/fixtures/unity/**/*.png

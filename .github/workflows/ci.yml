@@ -61,6 +61,13 @@ jobs:
         run: dart run tool/parse_check.dart
       - name: Diff against the official runtime (oracle)
         run: dart run tool/check_against_oracle.dart
+      # Every character bundled with the example app has to load: those assets
+      # are copies of test/fixtures/unity, and nothing about the originals proves
+      # the copies are complete. This also cross-checks each atlas against its
+      # PNG, and that example/pubspec.yaml and the generated catalogue list
+      # exactly the directories that exist.
+      - name: Example assets (all of them, through the runtime)
+        run: dart run tool/assets/check_example_assets.dart
       - name: Test
         run: |
           if [ -d test ]; then
