@@ -1,0 +1,252 @@
+---
+title: Getting started
+description: Install the packages, load a DragonBones export, and put an animated character on a Flutter Canvas.
+---
+
+From nothing to an animated character on a Flutter `Canvas`.
+
+## 1. Depend on it
+
+Not on pub.dev yet — use git or a path:
+
+```yaml
+dependencies:
+  dragonbones_flutter:
+    git:
+      url: https://github.com/RafaelBarbosatec/dragonbones_flutter
+      path: packages/dragonbones_flutter
+```
+
+`dragonbones_flutter` re-exports the whole runtime, so you only need this one
+import:
+
+```dart
+import 'package:dragonbones_flutter/dragonbones_flutter.dart';
+```
+
+## 2. Get your export
+
+Export from **DragonBones Pro** as *Data* (JSON) plus a *Texture* (atlas). You
+end up with three files per character, and the conventional names matter only
+for your own clarity:
+
+```
+assets/dragon/ske.json    skeleton + animations
+assets/dragon/tex.json    atlas: regions, names, pivots
+assets/dragon/tex.png     the raster they point at
+```
+
+Declare the folder in `pubspec.yaml`:
+
+```yaml
+flutter:
+  assets:
+    - assets/dragon/
+```
+
+The packages never load files themselves — they take an `AssetBundle` or raw
+bytes — so you are free to fetch assets from the network, a cache, or a test
+fixture instead.
+
+## 3. Load it and play an animation
+
+```dart
+final assets = await DragonBonesAssets.loadAsset(
+  bundle: rootBundle,
+  skeleton: 'assets/dragon/ske.json',
+  texture: 'assets/dragon/tex.json',
+  image: 'assets/dragon/tex.png',
+);
+
+final armature = assets.buildArmature('Dragon')!;
+final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+player.play('walk');
+```
+
+`buildArmature` takes the **armature** name, which is not always the file name —
+a single `.json` can hold several armatures (the `mecha_1004d` fixture holds
+four). `armature.armatureData.animationNames` lists what you can play:
+
+```dart
+debugPrint('${armature.armatureData.animationNames}'); // [stand, walk, jump, fall]
+```
+
+If you would rather not guess, `play()` with no argument plays the armature's
+default animation.
+
+## 4. Put it on screen
+
+### The lazy way — the widget
+
+```dart
+DragonBonesWidget(
+  player: player,
+  animation: 'walk',
+  fit: DragonBonesFit.contain,
+)
+```
+
+`DragonBonesWidget` owns a `Ticker`, calls `player.update(dt)` for you, and
+repaints. `DragonBonesFit.contain` scales and centres the pose in the widget's
+box. Set `playing: false` for a static pose.
+
+### The explicit way — your own painter
+
+If you already own a frame loop, skip the widget. `DragonBonesWidget` is not
+doing anything clever; this is the whole of it:
+
+```dart
+class _MyPainter extends CustomPainter {
+  _MyPainter(this.player, this.repaint) : super(repaint: repaint);
+
+  final DragonBonesPlayer player;
+  final Listenable repaint; // fires once per advanced frame
+
+  @override
+  void paint(Canvas canvas, Size size) => player.render(canvas);
+
+  @override
+  bool shouldRepaint(covariant _MyPainter old) => old.player != player;
+}
+```
+
+...driven by a `Ticker` (or your engine's frame callback), which is where the
+time actually comes from:
+
+```dart
+final _repaint = ValueNotifier<int>(0);
+Duration _last = Duration.zero;
+
+void _tick(Duration elapsed) {
+  final dt = (elapsed - _last).inMicroseconds / 1000000.0;
+  _last = elapsed;
+  if (dt <= 0) return;
+  player.update(dt);   // <- the only thing that advances the animation
+  _repaint.value++;    // <- tells the painter to redraw
+}
+```
+
+Note that `WorldClock` — the runtime's own clock — is a plain class, **not** a
+Flutter `Listenable`. Do not hand it to `CustomPainter(repaint:)`; drive
+repaints with a `Ticker` or a `ValueNotifier` as above.
+
+## 5. Place and scale it
+
+Three ways, in increasing order of control:
+
+```dart
+// a) let the widget do it
+DragonBonesWidget(player: player, fit: DragonBonesFit.contain)
+
+// b) set it once on the player
+player
+  ..scale = 2.0
+  ..offset = const Offset(160, 200);
+
+// c) per call
+player.render(canvas, scale: 2.0, offset: const Offset(160, 200));
+```
+
+For hitboxes, or to place something relative to the character, ask for the
+bounds of the current pose:
+
+```dart
+final Rect? bounds = player.computeBounds(); // in armature coordinates
+```
+
+`computeBounds()` is computed from the sprite quads *and* the posed mesh
+vertices, so it moves with the animation instead of being a static box.
+
+## 6. Common things you will want next
+
+### Switch animations
+
+```dart
+player.play('jump');
+```
+
+For a smooth transition instead of a hard cut, use `fadeIn` on the animation:
+
+```dart
+armature.animation.fadeIn('run', 0.2); // 0.2 s crossfade
+```
+
+`play(name, playTimes)` controls repetition: `-1` (the default) loops forever,
+`1` plays once. To check completion, read `armature.animation.lastAnimationState`
+and, while the animation is still running, `isCompleted`.
+
+### Flip the character to face the other way
+
+```dart
+armature.flipX = true;
+```
+
+### Show or hide a part
+
+```dart
+armature.getSlot('weapon')?.visible = false;
+```
+
+### Swap a slot's display (equip an item)
+
+`displayList` holds every display data available for the slot; `displayIndex`
+selects one. This is the cheap way to support equipment:
+
+```dart
+final slot = armature.getSlot('weapon')!;
+slot.displayIndex = 0; // whatever index your art uses
+```
+
+Changing `slot.display` also works when you want to put something else there
+entirely — including a nested armature, which the runtime builds and animates
+for you:
+
+```dart
+slot.childArmature = assets.buildArmature('sword_effect');
+```
+
+### Use a different skin
+
+A skin is a named set of display data — the DragonBones way to support
+alternate outfits without duplicating armatures:
+
+```dart
+final armature = assets.buildArmature('you_xin', skinName: 'suit2');
+```
+
+### Slow down or speed up time
+
+```dart
+player.armature.animation.timeScale = 0.5;
+```
+
+## Debugging: nothing is drawing
+
+Two counters on the player tell you why a slot was skipped during the last
+`render`, which is usually faster than instrumenting anything:
+
+```dart
+player.render(canvas);
+debugPrint('missing texture: ${player.skippedMissingTexture}');
+debugPrint('skipped meshes:  ${player.skippedMeshSlots}');
+```
+
+- `skippedMissingTexture > 0` — the atlas data did not resolve to an image. Your
+  `resolveImage` returned null, or the texture JSON names a different atlas.
+- `skippedMeshSlots > 0` — a mesh slot was skipped. You either set
+  `player.drawMeshes = false`, or a slot holds a mesh with no geometry.
+
+To check the pose numerically without any rendering at all:
+
+```dart
+for (final data in player.drawList) {
+  debugPrint('${data.name} visible=${data.visible} at ${data.matrix}');
+}
+```
+
+## Next
+
+- Inside Flame, Bonfire or a test: [Integration](/integration)
+- What is not supported, and what breaks if you use it:
+  [Limitations](/limitations)

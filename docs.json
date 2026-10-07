@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.page/schema.json",
+  "name": "DragonBones for Dart & Flutter",
+  "description": "A pure-Dart DragonBones runtime and a Flutter Canvas renderer, verified frame by frame against the official runtime.",
+  "theme": {
+    "primary": "#2E7DF7"
+  },
+  "social": {
+    "github": "RafaelBarbosatec/dragonbones_flutter"
+  },
+  "banner": {
+    "message": "v0.1.0 — publishable, not yet published on pub.dev. Depend by git for now.",
+    "href": "/publishing"
+  },
+  "anchors": [
+    {
+      "icon": "github",
+      "title": "GitHub",
+      "href": "https://github.com/RafaelBarbosatec/dragonbones_flutter"
+    },
+    {
+      "icon": "circle-exclamation",
+      "title": "Issues",
+      "href": "https://github.com/RafaelBarbosatec/dragonbones_flutter/issues"
+    }
+  ],
+  "content": {
+    "showPageTitle": true,
+    "showPageImage": false
+  },
+  "sidebar": [
+    {
+      "group": "Getting Started",
+      "icon": "rocket",
+      "pages": [
+        { "title": "Introduction", "href": "/" },
+        { "title": "Getting started", "href": "/getting-started" },
+        { "title": "Integration", "href": "/integration" }
+      ]
+    },
+    {
+      "group": "Guides",
+      "icon": "book",
+      "pages": [
+        { "title": "Limitations", "href": "/limitations" },
+        { "title": "Architecture & verification", "href": "/architecture" }
+      ]
+    },
+    {
+      "group": "Project",
+      "icon": "code",
+      "pages": [
+        { "title": "Investigation findings", "href": "/findings" },
+        { "title": "Publishing", "href": "/publishing" }
+      ]
+    }
+  ]
+}

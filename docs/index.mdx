@@ -1,0 +1,112 @@
+---
+title: Introduction
+description: A pure-Dart DragonBones runtime and a Flutter Canvas renderer. What they are, what is verified, and what is not.
+---
+
+Skeletal (bone-based) animation for **Dart**, **Flutter**, **Flame** and
+**Bonfire**, from animations exported by **DragonBones** — the free, MIT
+alternative to Spine and Rive.
+
+DragonBones runtimes exist officially for TypeScript/JS, C++, C#, Java, Haxe and
+ActionScript — but **never for Dart or Flutter**. This project closes that gap.
+
+<Info>
+  **Status: v0.1.0.** Feature-complete for the common case, not for everything.
+  Both packages are publishable (`--dry-run` clean) but deliberately unpublished
+  — see [Publishing](/publishing). For exactly what is missing, read
+  [Limitations](/limitations): it is a short, specific list, not a vague
+  disclaimer.
+</Info>
+
+## Two packages
+
+| Package | What it is | Depends on |
+| --- | --- | --- |
+| `dragonbones` | The runtime. Parses and evaluates the format, and exposes the pose as a **framework-agnostic draw list**. | Nothing. Zero dependencies. |
+| `dragonbones_flutter` | The renderer. Turns that draw list into `Canvas` calls. | Flutter only — **not Flame**. |
+
+The split is the whole point. A skeletal runtime is a pile of matrix maths, and
+that maths **drifts silently** — a bone off by a few thousandths looks fine until
+a foot slides through the floor. Keeping the runtime free of Flutter means it can
+be verified with a **bare Dart SDK**, no GPU and no device, against the official
+implementation. See [Architecture & verification](/architecture).
+
+The renderer is deliberately not coupled to any engine. It is two methods:
+
+```dart
+player.update(dt);     // advance the animation
+player.render(canvas); // draw the pose
+```
+
+That is the entire contract, which is why the same code drops into a plain
+Flutter app, a Flame `Component`, a Bonfire `GameComponent`, or your own painter.
+
+## Verify it yourself
+
+The claim this project makes is not "it works" but "it matches the official
+runtime, and here is the number". Measured on the current commit:
+
+```text
+757701 numeric comparisons over 51 assets (51 clean, 0 failing)
+74245 mesh values, 1228 nested-armature slots
+RESULT: PASS
+```
+
+51 assets replayed frame by frame — the whole DragonBones **Unity SDK** demo set
+plus a hand-picked ladder — comparing every bone matrix, every slot's draw data,
+every posed mesh vertex and UV, and every flattened nested-armature slot against
+the official runtime. Worst-case error is ~5e-7, which is the rounding precision
+of the reference dumps themselves.
+
+<CardGroup cols={2}>
+  <Card title="Getting started" icon="rocket" href="/getting-started">
+    Load an export and put an animated character on a Canvas.
+  </Card>
+  <Card title="Integration" icon="puzzle-piece" href="/integration">
+    Flame, Bonfire, your own painter, or a headless test.
+  </Card>
+  <Card title="Limitations" icon="triangle-exclamation" href="/limitations">
+    Read this one before committing a project. What is not evaluated, and how to
+    tell whether your assets are affected.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/architecture">
+    How the port is built, and why the verification means something.
+  </Card>
+</CardGroup>
+
+## Is it good enough for my project?
+
+**Probably yes** if you are drawing animated characters with sprites and meshes,
+swapping skins and equipment, and mounting weapons or effects on bones. That is
+what is verified.
+
+**Probably not yet** if you need:
+
+- **animation events** — firing damage, sounds or projectiles from a frame,
+- **animated IK**, or
+- **animated slot z-order or per-slot alpha**.
+
+<Warning>
+  Those gaps are *not evaluated* rather than *unsupported*, which is the
+  dangerous kind: a file using them loads and animates, then behaves subtly wrong
+  instead of failing loudly. [Limitations](/limitations) lists each one, what you
+  will see, and how to tell from the JSON whether your assets rely on it.
+</Warning>
+
+## Why it exists
+
+Flame has `flame_spine`, `flame_rive` and `flame_lottie`, but no DragonBones
+bridge — and `flame_spine`/`flame_rive` require paid tooling. There is an open
+Flame issue asking for exactly this, and the maintainers answered with an
+explicit invitation:
+
+> "We're not planning on implementing this from the core team, but if anyone
+> feels like creating a bridge package to live in the monorepo we're more than
+> happy to review it and take it in."
+> — [flame-engine/flame#3788](https://github.com/flame-engine/flame/issues/3788)
+
+For a real game the win is not "prettier sprites". It is **slot and skin
+swapping** (equip armour and weapons without authoring N sprites per
+combination), **deform meshes**, **bone attachment** for hitboxes and effect
+spawn points, and — once events land — driving gameplay from the animation
+itself.

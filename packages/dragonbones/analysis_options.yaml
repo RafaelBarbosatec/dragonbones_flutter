@@ -1,5 +1,5 @@
 # This runtime is a *faithful transcription* of the upstream DragonBones
-# TypeScript (see doc/FINDINGS.md for why). Upstream deliberately keeps members
+# TypeScript (see docs/findings.mdx for why). Upstream deliberately keeps members
 # that a given milestone does not exercise yet — IK helpers, constraint hooks,
 # engine-side render hooks, blend-mode plumbing. In a transcription those read
 # as "unused", which is expected rather than a mistake, so those two lints are

@@ -4,7 +4,15 @@ description: >-
   `update(dt)` + `render(Canvas)`, plus a ready-made widget. No Flame dependency,
   so it drops into any Flutter project, a Flame component, or Bonfire.
 version: 0.1.0
-repository: https://github.com/RafaelBarbosatec/flame_dragon_bones
+repository: https://github.com/RafaelBarbosatec/dragonbones_flutter
+documentation: https://docs.page/RafaelBarbosatec/dragonbones_flutter
+issue_tracker: https://github.com/RafaelBarbosatec/dragonbones_flutter/issues
+topics:
+  - dragonbones
+  - skeletal-animation
+  - flame
+  - gamedev
+  - canvas
 publish_to: none
 
 environment:

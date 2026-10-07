@@ -4,7 +4,14 @@ description: >-
   DragonBones Pro exports and evaluates armatures, bone timelines and mesh
   deformation. No Flutter dependency.
 version: 0.1.0
-repository: https://github.com/RafaelBarbosatec/flame_dragon_bones
+repository: https://github.com/RafaelBarbosatec/dragonbones_flutter
+documentation: https://docs.page/RafaelBarbosatec/dragonbones_flutter
+issue_tracker: https://github.com/RafaelBarbosatec/dragonbones_flutter/issues
+topics:
+  - dragonbones
+  - skeletal-animation
+  - animation
+  - gamedev
 publish_to: none
 
 environment:

@@ -1,0 +1,181 @@
+---
+title: Integration
+description: Use the renderer inside Flame, Bonfire, a CustomPainter, or a headless test, plus loading assets from anywhere.
+---
+
+The renderer depends on Flutter, **not** on any engine. It is two methods, so
+every integration below is the same two lines wearing different hats:
+
+```dart
+player.update(dt);
+player.render(canvas);
+```
+
+> **Honesty note.** The recipes on this page are illustrative. The packages have
+> no Flame or Bonfire dependency, so those adapters are *not* exercised by this
+> repository's CI — the tested paths are the plain-Flutter widget and the
+> headless draw list. Treat the engine snippets as wiring you may need to adjust
+> to your version of the engine.
+
+## Plain Flutter
+
+Two options. The widget owns a `Ticker` for you:
+
+```dart
+DragonBonesWidget(player: player, animation: 'walk', fit: DragonBonesFit.contain)
+```
+
+Or drive it yourself from a `Ticker` — see
+[Getting started](/getting-started#4-put-it-on-screen).
+
+## Flame
+
+A `PositionComponent` that owns the player. Flame's transform (position,
+rotation, scale) is applied by the engine before `render` is called, so the
+component just delegates:
+
+```dart
+class DragonBonesComponent extends PositionComponent {
+  DragonBonesComponent(this.player, {super.position, super.size});
+
+  final DragonBonesPlayer player;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    player.update(dt);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    player.render(canvas);
+  }
+}
+```
+
+Two things worth knowing:
+
+- **Size the component to the animation**, or hitboxes and camera culling will
+  be wrong. `player.computeBounds()` gives you the current pose's bounds; for a
+  static size, use the bounds at the first frame, or the armature's own extent.
+- **Anchor.** By default the armature is drawn from its origin. Use
+  `player.offset` to shift it so the character's feet sit on the component
+  position, or use `anchor` on the `PositionComponent` once you know the size.
+
+A reusable `flame_dragonbones` package (a real `PositionComponent` with a
+hitbox derived from the skeleton) is on the
+[roadmap](https://github.com/RafaelBarbosatec/dragonbones_flutter#roadmap).
+
+## Bonfire
+
+Bonfire components render inside the engine's own transform pipeline, so a
+`GameComponent` looks much like the Flame one:
+
+```dart
+class DragonBonesGameComponent extends GameComponent {
+  DragonBonesGameComponent(this.player);
+
+  final DragonBonesPlayer player;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    player.update(dt);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    player.render(canvas);
+  }
+}
+```
+
+For the hitbox, prefer Bonfire's own mixins over hand-rolling collision — take
+the extent from `player.computeBounds()` and hand it to a `Hitbox`:
+
+```dart
+@override
+Future<void> onLoad() async {
+  final b = player.computeBounds();
+  if (b != null) {
+    add(RectangleHitbox(size: Vector2(b.width, b.height)));
+  }
+}
+```
+
+Note that `computeBounds()` reflects the **current pose**, so a character that
+swings a sword will report a wider box on the swing frame. If you want a stable
+hitbox, measure once at load time and cache it.
+
+## Any engine, or none
+
+The renderer never mutates engine objects: the runtime is driven through a
+renderer-less factory and the pose is read back as a plain `SlotDrawData` list.
+So if your engine is not listed above, the integration is:
+
+1. give it a `Canvas`,
+2. call `player.update(dt)` on your frame tick,
+3. call `player.render(canvas)` somewhere in the draw pass.
+
+That is the entire contract.
+
+## Headless / server / tests
+
+The runtime has **zero dependencies and no Flutter in it**, so you can evaluate
+an animation with a bare Dart SDK — no device, no GPU, no `WidgetTester`. This is
+how the port's own correctness is established.
+
+```dart
+final factory = HeadlessFactory();
+factory.parseDragonBonesData(jsonDecode(skeJson), 'Dragon');
+factory.parseTextureAtlasData(jsonDecode(texJson), null, 'Dragon');
+
+final armature = factory.buildArmature('Dragon', 'Dragon')!;
+armature.animation.play('walk');
+
+for (var frame = 0; frame < 21; frame++) {
+  armature.advanceTime(1 / 24);
+
+  for (final slot in armature.buildDrawList()) {
+    // Assert geometry directly — matrix, pivot, region, colour, visibility,
+    // and for meshes: vertices, uvs, triangles.
+    expect(slot.matrix.a, closeTo(expected, 1e-6));
+  }
+}
+```
+
+`buildDrawList()` is the same list the renderer consumes, so a test asserting on
+it is asserting on exactly what would be drawn. That is a stronger guarantee than
+a screenshot and it runs in milliseconds.
+
+If you *do* need pixels in a Flutter test, the renderer's own tests show the
+pattern: build a synthetic atlas image, render to a `PictureRecorder`, rasterise
+it and count the non-transparent pixels. That catches "drew nothing"; it cannot
+catch "drew it wrong".
+
+## Loading assets from somewhere other than `rootBundle`
+
+`DragonBonesAssets` takes an `AssetBundle`, but you are not limited to it — the
+loading layer is deliberately thin:
+
+```dart
+// From bytes you already have (network, cache, database):
+final assets = DragonBonesAssets.fromDecoded(
+  skeletonJson: jsonDecode(ske),
+  textureJson: jsonDecode(tex),
+  image: await DragonBonesAssets.decodeImageBytes(pngBytes),
+);
+
+// Or build the pieces yourself:
+final factory = HeadlessFactory();
+factory.parseDragonBonesData(jsonDecode(ske), 'Dragon');
+factory.parseTextureAtlasData(jsonDecode(tex), null, 'Dragon');
+final armature = factory.buildArmature('Dragon', 'Dragon')!;
+final player = DragonBonesPlayer(armature, resolveImage: (atlas) => myImage);
+```
+
+`resolveImage` is `ui.Image? Function(TextureAtlasData)`. Returning `null` for an
+atlas is safe — the renderer counts the skip in `player.skippedMissingTexture`
+rather than throwing, which is useful when a character spans several atlases and
+one has not loaded yet.

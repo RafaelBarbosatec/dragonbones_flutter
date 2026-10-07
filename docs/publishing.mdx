@@ -1,0 +1,105 @@
+---
+title: Publishing
+description: The exact release sequence for the two packages, and why the runtime has to go out first.
+---
+
+Both packages are **not** published, and the pubspecs carry `publish_to: none` on
+purpose. Nothing goes to pub.dev until someone removes that line deliberately,
+because a pub.dev release cannot be deleted — only retracted.
+
+Check the current state at any time:
+
+```bash
+cd packages/dragonbones          && dart pub publish --dry-run
+cd packages/dragonbones_flutter  && flutter pub publish --dry-run
+```
+
+<Info>
+  This repository is named after the renderer package because that is the one
+  users import, but it hosts **both** packages: `dragonbones` (the runtime, in
+  `packages/dragonbones`) and `dragonbones_flutter` (the renderer, in
+  `packages/dragonbones_flutter`). The two are published to pub.dev as separate
+  packages.
+</Info>
+
+## Why the order matters
+
+`dragonbones_flutter` depends on `dragonbones` through a **path** dependency:
+
+```yaml
+dependencies:
+  dragonbones:
+    path: ../dragonbones
+```
+
+That works inside this repository and **must** change before publishing — a
+published package cannot depend on a path. So `dragonbones` has to go out first,
+and only then can the renderer point at a version range. Doing it the other way
+around leaves a window where CI is red for no reason, which is why it is not done
+in advance.
+
+## Steps
+
+```bash
+# 1. runtime first
+cd packages/dragonbones
+#    - version is already 0.1.0
+#    - delete the `publish_to: none` line
+dart pub publish --dry-run     # must be clean before the real thing
+dart pub publish               # <- irreversible
+
+# 2. then the renderer
+cd ../dragonbones_flutter
+#    - version is already 0.1.0
+#    - delete the `publish_to: none` line
+#    - replace the path dependency:
+#         dragonbones:
+#           path: ../dragonbones
+#      with:
+#         dragonbones: ^0.1.0
+flutter pub get && flutter test
+flutter pub publish --dry-run
+flutter pub publish
+```
+
+## Checklist
+
+| Item | `dragonbones` | `dragonbones_flutter` |
+| --- | --- | --- |
+| `LICENSE` in the package root | ✅ | ✅ |
+| `CHANGELOG.md` | ✅ | ✅ |
+| `README.md` | ✅ | ✅ |
+| Version at `0.1.0` | ✅ | ✅ |
+| No `path:` dependency | ✅ (no dependencies at all) | ⬜ becomes `^0.1.0` in step 2 |
+| `publish_to: none` removed | ⬜ on publish | ⬜ on publish |
+| `--dry-run` clean | ✅ gated in CI | ✅ gated in CI |
+
+## Name availability
+
+Checked 2026-10 and free on pub.dev: `dragonbones`, `dragonbones_flutter` and
+`flame_dragonbones`. If `dragonbones` is taken by the time you publish, the
+fallback worth considering is `flame_dragonbones` for the renderer and whatever
+the runtime ends up as.
+
+## What is deliberately not in the archive
+
+`packages/dragonbones/.pubignore` drops the `tool/` directory. Those scripts
+(`check_against_oracle.dart`, `parse_check.dart`, `inspect_fixture.dart`) read the
+reference dumps and fixtures from the repository root, which is outside the
+package — shipping them would ship something that cannot run. They live in the
+repository, where they work.
+
+## Before a 1.0
+
+Not blockers for a first release, but worth knowing. See
+[Limitations](/limitations) for the full, specific list:
+
+- **Animation events** (`EventObject`) are not ported — the highest-value gap.
+- **Animated IK**, **`SlotZIndex`**, **`SlotAlpha` / `BoneAlpha`**, **path
+  constraints** and **`Surface` bones** are parsed but not evaluated. No asset in
+  the 51-asset test set needs them; a project that does would hit a wall.
+- **Appearance is only eyeballed.** CI proves pixels are produced, not that the
+  result looks right.
+- **No benchmarks.** Pooling was dropped, so allocation behaviour differs from
+  upstream and is unmeasured.
+- The example app is a demo, not documentation.

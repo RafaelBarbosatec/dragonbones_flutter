@@ -1,0 +1,117 @@
+---
+title: Limitations
+description: What is parsed but not evaluated, what breaks and how, which blend modes are approximated, and what the verification does not prove.
+---
+
+This is the page that decides whether the packages can carry your project. It is
+deliberately specific. A vague "not everything is supported" is worse than
+useless, because the failure mode here is silent: an unsupported feature
+**loads, parses and animates**, then produces subtly wrong geometry rather than
+an exception.
+
+<Warning>
+  If you are evaluating, check the table in
+  [Not evaluated](#not-evaluated) against your art pipeline before anything else.
+  Nothing in it throws — it just quietly gets the pose wrong.
+</Warning>
+
+## Not evaluated
+
+Each row is *parsed* by the data model but never *applied* at runtime. None of
+them throw. All of them will make your animation quietly wrong.
+
+| Feature | What is missing | What you will see |
+| --- | --- | --- |
+| **Animation events** (`EventObject`) | The event dispatcher, `bufferEvent`, and the frame/action/loop/complete/fade hooks are not ported. | Nothing fires. You cannot play a sound, spawn a projectile or apply damage from a frame. This is the most consequential gap for a game. |
+| **IK constraint timelines** (`IKConstraintTimelineState`) | `AnimationState._updateTimelines()` is a no-op, so no constraint timeline state is ever created. | **Static** IK (the `weight`/`bendPositive` in the armature data) is applied and verified. **Animated** IK is not: if the animation keys the IK weight, the limb follows the raw bone transforms instead — feet slide, hands miss targets. |
+| **Path constraints** (`PathConstraint`) | `PathConstraintData` is parsed into the model; the runtime class is never built. `Armature._buildConstraints` handles IK only. | A bone meant to travel along a path stays at its own transform. |
+| **`Surface` bones** (`SurfaceTimelineState`) | `SurfaceData` and `Surface` exist as model/armature classes; the timeline state is never created, and the bone/slot timeline switch has no `Surface` case. | Surface deformation does not happen. The bone behaves as a plain bone. |
+| **`SlotZIndex` timeline** | No `SlotZIndexTimelineState`; the slot timeline switch handles display, colour and deform only. | Static z-order from the armature data works. An **animated** z-index is ignored, so draw order is wrong mid-animation — a cloak that should move behind the body stays in front. |
+| **`BoneAlpha` / `SlotAlpha` timelines** | `AlphaTimelineState` is ported but never instantiated — there is no `BoneAlpha` or `SlotAlpha` case in either timeline switch. | Per-slot fade driven by a dedicated alpha timeline does nothing. Note the **`SlotColor` timeline does work**, including its alpha multiplier, so fading via colour is fine. |
+| **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | `AnimationState.addState` exists, but no timeline state is created, and `AnimationBlendType` (E1D / E2D blending) is never evaluated. | Blending one animation into another by parameter does not happen; child animation states do not drive the parent. |
+| **Binary `.dragonbones` input** (`BinaryDataParser`) | Only `ObjectDataParser` (JSON) exists. | A binary export will not parse at all — this one *does* fail loudly, which is the good kind. |
+
+### How to tell if your asset is affected
+
+You do not have to guess — the data is in the JSON you already have. Search the
+skeleton JSON:
+
+| Look for | Meaning |
+| --- | --- |
+| `"ik"` inside an armature | It has IK constraints. Fine if the weight is constant or `0`; a problem if an animation keys it. |
+| `"path"` | Path constraints — not supported. |
+| `"type":1` in a `bone` entry | `BoneType.Surface` — Surface bones, not supported. |
+| `"type":50` in a timeline | `Surface` timeline — not supported. |
+| `"type":30` in a timeline | `IKConstraint` timeline — the IK weight is animated and will be ignored. |
+| `"type":23` in a `slot` timeline | `SlotZIndex` timeline — not supported. |
+| `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — not supported. |
+| `"actions"`, or animation frames carrying events | Animation events — they will not fire. |
+
+(The timeline type numbers above are the ones this port uses; see
+`TimelineType` in `packages/dragonbones/lib/src/core/dragon_bones.dart`.)
+
+Two real examples from this repository's own fixtures, which is why the
+limitation is stated with such confidence:
+
+- The `龙` fixture has two IK constraints, but **both have `weight: 0`** — inert.
+  They pass, and for a while they hid the fact that the `IKConstraint` class had
+  not been written at all.
+- The `mecha_1406` and five `you_xin` assets declare IK **without** a `weight`
+  field. The parser default is `1.0`, so they are active — and they were the seven
+  assets that failed until `IKConstraint` was ported. See
+  [Investigation findings § 9.1](/findings).
+
+## Approximated in the renderer
+
+| Item | Detail |
+| --- | --- |
+| **Five blend modes** | `Alpha`, `Erase`, `Invert`, `Layer` and `Subtract` have no exact counterpart in `dart:ui`, so the closest `ui.BlendMode` is used (`dstIn`, `dstOut`, `difference`, `srcOver`, `difference` respectively). The other nine — `Normal`, `Add`, `Multiply`, `Screen`, `Darken`, `Lighten`, `Overlay`, `HardLight`, `Difference` — map exactly. No fixture in the 51-asset set uses the approximated five, so they are **unverified**, not merely approximated. |
+| **Rotated atlas entries** | A code path exists for regions stored rotated a quarter turn in the atlas, and it is marked unverified in-source. No fixture uses one. If your atlas packs rotated regions, validate this before shipping. |
+
+The mapping is in `packages/dragonbones_flutter/lib/src/player.dart` and is easy
+to read if you want to check a specific mode.
+
+## Not verifiable in this repository
+
+| Item | Why | Consequence |
+| --- | --- | --- |
+| **Appearance** | CI runners have no GPU. | The renderer tests rasterise and count painted pixels. That catches "wired wrong and drew nothing"; it cannot catch "drew it in the wrong place" or "wrong colour". Eyeballs are required. |
+| **Performance** | No benchmarks exist. | Allocation behaviour differs from the official runtimes because object pooling was dropped. If you run hundreds of animated characters per frame, measure it yourself before committing. |
+
+## Deliberate deviations from upstream
+
+These are choices, not gaps — but they change behaviour, so they are listed.
+
+- **No object pooling.** Upstream implements a per-class pool
+  (`BaseObject.borrowObject` / `returnToPool`). Dart's GC makes it unnecessary,
+  so objects are constructed directly. This is the single biggest structural
+  difference from the reference implementation.
+- **An upstream bug was NOT transcribed.** In `Slot`'s `displayFrameCount`
+  setter, the removal branch upstream reads
+  `for (let i = prevCount - 1; i < value; --i)` — the loop condition is never
+  true, so the body never runs and the removal silently does nothing. The port
+  uses `i >= value`, so the removal actually happens. Behaviour therefore
+  *differs from upstream* in this one case, on purpose.
+- **JS array growth.** Upstream grows arrays with `list.length = n`, which in JS
+  creates sparse holes. Dart cannot do that for non-nullable element types, so
+  those sites were rewritten to append. Four crashes were traced to this during
+  the port; see [Investigation findings § 8.4](/findings).
+
+## What *is* verified, for contrast
+
+So the limitations above can be read against a known baseline. Verified frame by
+frame against the official DragonBones runtime:
+
+- bone global matrices, and bone translate/rotate/scale/all timelines,
+- slot draw data: world matrix, pivot, quad size, atlas region, z-order,
+  visibility, blend mode, colour — and the slot display and colour timelines,
+- deform (FFD) timelines, and deformable meshes both plain and **skinned**, with
+  posed vertices, UVs and triangle indices,
+- **static IK constraints**,
+- nested child armatures, flattened with the parent slot's matrix composed on,
+- z-order and action timelines.
+
+51 assets, 757,701 numeric comparisons, 0 mismatches. The numbers, the method and
+the caveats (including that the mesh oracle is the official *Egret binding*, not
+the core runtime) are in [Architecture & verification](/architecture#verification)
+and [Investigation findings](/findings).

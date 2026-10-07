@@ -87,3 +87,48 @@ jobs:
         run: |
           flutter pub get
           flutter analyze
+
+  # Keeps the "publishable" claim honest. `publish_to: none` stays in place, so
+  # nothing is ever uploaded — but a package that would fail `pub publish` should
+  # fail CI instead of failing on release day.
+  publishable:
+    name: publish dry-run (not publishing)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: '3.11.0'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.2'
+          channel: stable
+          cache: true
+      - name: dragonbones
+        working-directory: packages/dragonbones
+        run: |
+          dart pub get
+          dart pub publish --dry-run
+      - name: dragonbones_flutter
+        working-directory: packages/dragonbones_flutter
+        run: |
+          flutter pub get
+          flutter pub publish --dry-run
+
+  # The documentation site is generated from docs/ by docs.page, so broken
+  # frontmatter, a dead internal link or an MDX file that will not render should
+  # fail here, not in public.
+  #
+  # `--external-links off` is deliberate: the default (`error`) makes real HTTP
+  # requests for every external URL, including to hosts that do not exist yet
+  # (the pub.dev pages, before the first release). That hangs rather than fails,
+  # so only the deterministic checks are gated.
+  docs:
+    name: docs.page (frontmatter, links, MDX)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npx --yes @docs.page/cli check --external-links off
