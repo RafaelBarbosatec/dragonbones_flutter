@@ -6,6 +6,8 @@ import 'package:dragonbones_flutter/dragonbones_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import 'head_follow_page.dart';
+
 void main() {
   runApp(const DragonBonesExampleApp());
 }
@@ -98,7 +100,20 @@ class _DemoPageState extends State<DemoPage> {
     final player = _player;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('DragonBones on a Flutter Canvas')),
+      appBar: AppBar(
+        title: const Text('DragonBones on a Flutter Canvas'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Head follows the pointer (mouse / touch)',
+            icon: const Icon(Icons.mouse),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const HeadFollowPage(),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: Column(
         children: <Widget>[
           Expanded(
