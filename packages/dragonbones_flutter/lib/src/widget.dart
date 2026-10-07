@@ -156,21 +156,38 @@ class _DragonBonesPainter extends CustomPainter {
 extension DragonBonesPlayerGeometry on DragonBonesPlayer {
   /// Bounding box of the current pose, in armature coordinates.
   ///
-  /// Computed from the sprite quads, so it moves with the animation. Returns
-  /// null when there is nothing to draw. Mesh slots are not included yet.
+  /// Computed from the sprite quads and the posed mesh vertices, so it moves
+  /// with the animation. Returns null when there is nothing to draw.
   Rect? computeBounds() {
     Rect? result;
+
+    void include(double x, double y) {
+      result = result == null
+          ? Rect.fromLTWH(x, y, 0, 0)
+          : result!.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
+    }
+
     for (final data in drawList) {
       if (!data.visible || data.texture == null) {
         continue;
       }
       final m = data.matrix;
+
+      final mesh = data.mesh;
+      if (mesh != null) {
+        // A mesh has no quad: its extent is the posed triangle list, already in
+        // armature space but still to be transformed by the slot matrix.
+        for (var i = 0; i < mesh.vertices.length; i += 2) {
+          final px = mesh.vertices[i];
+          final py = mesh.vertices[i + 1];
+          include(m.a * px + m.c * py + m.tx, m.b * px + m.d * py + m.ty);
+        }
+        continue;
+      }
+
       for (final corner in data.localQuad) {
-        final x = m.a * corner[0] + m.c * corner[1] + m.tx;
-        final y = m.b * corner[0] + m.d * corner[1] + m.ty;
-        result = result == null
-            ? Rect.fromLTWH(x, y, 0, 0)
-            : result.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
+        include(m.a * corner[0] + m.c * corner[1] + m.tx,
+            m.b * corner[0] + m.d * corner[1] + m.ty);
       }
     }
     return result;

@@ -214,14 +214,25 @@ abstract class BaseFactory {
 
   /// @internal
   ///
-  /// Nested child armatures are not supported in milestone 1; returning null
-  /// makes the caller fall back to a plain display.
+  /// Nested child armatures: a slot whose display is of type
+  /// [DisplayType.Armature] holds a whole other armature (a weapon, an effect,
+  /// a swappable part). The child is built from the same data package, so a
+  /// skeleton that packs several armatures into one file — `mecha_1004d` packs
+  /// four — resolves them without any extra setup.
+  ///
+  /// Faithful port of `BaseFactory._buildChildArmature`; the caller
+  /// ([Slot._updateDisplay]) wires the child's clock, parent and animation.
   Armature? _buildChildArmature(
     BuildArmaturePackage? dataPackage,
     Slot slot,
     ArmatureDisplayData displayData,
   ) {
-    return null;
+    return this.buildArmature(
+      displayData.path,
+      dataPackage != null ? dataPackage.dataName : '',
+      '',
+      dataPackage != null ? dataPackage.textureAtlasName : '',
+    );
   }
 
   /// @internal
@@ -251,14 +262,28 @@ abstract class BaseFactory {
             this._buildChildArmature(dataPackage, slot, armatureDisplayData);
         if (childArmature != null) {
           childArmature.inheritAnimation = armatureDisplayData.inheritAnimation;
-          // NOTE: upstream also registers the display data's actions as events
-          // here. EventObject is not ported in milestone 1, and
-          // _buildChildArmature always returns null, so this branch is
-          // unreachable today — revisit when nested armatures land.
-          childArmature.animation.play();
-          return childArmature.display;
+
+          if (!childArmature.inheritAnimation) {
+            final actions = armatureDisplayData.actions.isNotEmpty
+                ? armatureDisplayData.actions
+                : childArmature.armatureData.defaultActions;
+            if (actions.isEmpty) {
+              childArmature.animation.play();
+            }
+            // else: upstream buffers each action as an EventObject. EventObject
+            // is not ported, so those actions are dropped. Nothing in the
+            // supported fixtures takes this branch (their nested armatures all
+            // inherit the parent's animation).
+          }
+
+          armatureDisplayData.armature = childArmature.armatureData;
         }
-        return null;
+
+        // NOTE: upstream returns the Armature itself, not `childArmature.display`.
+        // Slot._updateDisplay relies on that: it tests `_display is Armature` to
+        // adopt the child (wiring its clock, parent and animation). Returning the
+        // engine proxy here silently leaves the child armature un-animated.
+        return childArmature;
 
       default:
         return null;

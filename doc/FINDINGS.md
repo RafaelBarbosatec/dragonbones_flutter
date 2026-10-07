@@ -141,3 +141,120 @@ tolerance. A green diff means the port is correct **without rendering anything**
 To capture deformed mesh vertices as oracle data, `_updateMesh` must be
 implemented in the harness the way engines do it (skin vertices against bone
 matrices) — that is milestone 2 work.
+
+---
+
+## 8. Milestone 2 — meshes, FFD and nested armatures (what it actually took)
+
+Four things had to be discovered the hard way. Each is now encoded in the code
+and in the oracle, with a comment explaining why.
+
+### 8.1 The port was dropping `_onClear()` — and that broke more than pooling
+
+The port skips upstream's object pool (Dart has a GC) and constructs objects
+directly. That looked harmless, but upstream's `BaseObject.borrowObject` is:
+
+```ts
+const object = new objectConstructor();
+object._onClear();          // always, even on a brand new object
+return object;
+```
+
+`_onClear()` is not merely "reset a recycled object" — it is where a subclass
+establishes its default state. `ArmatureDisplayData`, `MeshDisplayData`,
+`PathDisplayData` and `BoundingBoxDisplayData` set their `type` there and
+**nowhere else**. Without the call, every subclass kept the base default
+`DisplayType.Image`, so:
+
+* a slot holding a nested armature crashed on load
+  (`type 'ArmatureDisplayData' is not a subtype of type 'ImageDisplayData'`),
+* mesh slots were silently treated as sprites.
+
+Fix: `BaseObject`'s constructor calls `_onClear()`. Safe in Dart because a
+subclass's field initializers run *before* the superclass constructor body
+(verified empirically), so every field in the chain is initialised by then.
+
+This is the general lesson: **when a port drops a mechanism, check what else that
+mechanism was doing.** Here the pool was load-bearing for initialisation.
+
+### 8.2 Mesh deformation is not in the runtime — it is in the *binding*
+
+`Slot._updateMesh()` is abstract in the core runtime and **no implementation
+exists there**. Every engine writes its own. So the oracle for mesh geometry is
+`.ref/egret-binding/EgretSlot.ts`, transcribed verbatim into
+`tool/ground_truth/dump.js`, and then separately into
+`packages/dragonbones/lib/src/render/mesh_geometry.dart`.
+
+Two paths, both CPU-side (no shaders anywhere in DragonBones deformation):
+
+| Path | Algorithm |
+| --- | --- |
+| plain mesh | rest vertices × armature scale, plus deform offsets |
+| skinned mesh | per vertex, sum over bones: `(boneMatrix × (localOffset × scale + deform)) × weight` |
+
+Storage is in the shared flat arrays on `DragonBonesData`
+(`Int16List intArray` / `Float32List floatArray`), reached through
+`geometry.offset` and `weight.offset`. Offsets are stored in the **int16** array,
+so anything past 32767 wraps negative and needs `+= 65536` — upstream calls this
+"Fixed out of bounds bug" and it is load-bearing.
+
+Mesh UVs are normalised to the atlas **sub-texture** (0..1 across `region`), not
+to the whole atlas — confirmed by `MeshNode.drawMesh(bitmapX, bitmapY,
+bitmapWidth, bitmapHeight, ...)` and by the mesh bounding box matching the region
+size (`tou`: 178.3×214.9 vs region 176×213).
+
+### 8.3 FFD needed `DeformTimelineState`, and the fixture check that missed it
+
+`龙`'s `stand` animation looked timeline-less at first: the timelines live under
+the `ffd` key, not `timeline`. Once found, the missing piece was clear —
+`DeformTimelineState` (a *blend* timeline, so its target is a `BlendState`, not
+the slot), plus the lazy `displayFrame.updateDeformVertices()` and the pose
+fallback. The parser already read the data (`_parseSlotDeformFrame`); only the
+animation side was missing.
+
+Symptom if you skip it: mesh vertices that should breathe stay frozen, and the
+oracle diff lights up on every mesh with deform.
+
+### 8.4 Three more JS→Dart growth bugs
+
+Same family as the three already documented in the port: `weightBoneIndices` was
+created with `List<int>.filled(0, 0)` and then grown with `.length = n`, which
+throws on a fixed-length Dart list — so **`龙` had never actually been parsed**.
+The int array also relied on JS's auto-grow-on-write for the per-weight-bone
+index table, which Dart needs reserved explicitly (`_growInt`).
+
+### 8.5 Nested armatures: two real bugs, both silent
+
+`mecha_1004d` packs four armatures into one file, three of them mounted on slots
+of the first. Two things were wrong:
+
+1. `_getSlotDisplay` returned `childArmature.display` (the engine proxy).
+   Upstream returns the **`Armature` itself** — `Slot._updateDisplay` tests
+   `_display is Armature` to adopt the child and wire its clock, parent and
+   animation. Returning the proxy left the child permanently un-animated, with
+   no error.
+2. The draw list only walked the top-level armature's slots, so the weapon and
+   effect armatures were built and updated but never drawn.
+
+Fix: return the child `Armature`, and flatten children into `buildDrawList()` —
+a slot with a child contributes the child's slots in its place, with the parent
+slot's matrix composed onto theirs. That mirrors what an engine does by
+parenting the child's display object to the slot's display (`EgretSlot._addDisplay`
+→ `addChild`), and it means a renderer never has to know child armatures exist.
+
+The composition direction matters and is easy to get backwards: in this runtime
+`m.copyFrom(x); m.concat(y)` means "apply x, then y", so the **child** goes in
+first. Inverted, the child is silently mirrored about the origin.
+
+### 8.6 Result
+
+```
+172925 numeric comparisons, 0 mismatches (tolerance 0.0001)
+21173 mesh values, 118 nested-armature slots
+RESULT: PASS
+```
+
+targets: `Dragon` ×5 (sprites), `龙` (60 bones, 5 meshes — 2 skinned — with
+animated FFD), `mecha_1004d` (nested armatures). `mecha` peaks at 5.2e-5 rather
+than 5e-7 purely because composing two matrices per child slot compounds the
+reference dumps' own rounding.

@@ -24,6 +24,18 @@ function loadRuntime() {
 
 const db = loadRuntime();
 
+// `BinaryOffset` is a TypeScript `const enum`, so the compiler inlines it and
+// it does NOT exist at runtime (`db.BinaryOffset` is undefined). Mirror the
+// values from .ref/dragonBones-ts/core/DragonBones.ts instead.
+const BO = {
+  WeigthFloatOffset: 1,
+  WeigthBoneIndices: 2,
+  GeometryVertexCount: 0,
+  GeometryTriangleCount: 1,
+  GeometryFloatOffset: 2,
+  GeometryVertexIndices: 4,
+};
+
 // ---------------------------------------------------------------- headless
 
 // Proxy: cada engine implementa IArmatureProxy. Aqui é um no-op que só precisa
@@ -43,8 +55,14 @@ class HeadlessArmatureDisplay {
   dispatchDBEvent(_type, _eventObject) { }
 }
 
-// Slot: todos os métodos abstratos de render viram no-op. O que interessa aqui
-// é a matemática (transforms dos ossos), não o desenho.
+// Slot: todos os métodos abstratos de render viram no-op, EXCETO os de malha.
+// O que interessa aqui é a matemática (transforms dos ossos e vértices de
+// malha), não o desenho.
+//
+// `_updateMesh` é transcrito VERBATIM de `.ref/egret-binding/EgretSlot.ts` — que
+// é onde a deformação de malha realmente vive. O runtime oficial NÃO a
+// implementa: `Slot._updateMesh` é abstrato e cada engine o escreve. Então o
+// gabarito para malha é o binding oficial do Egret, não o core.
 class HeadlessSlot extends db.Slot {
   static toString() { return '[class HeadlessSlot]'; }
   _updateVisible() { }
@@ -57,10 +75,108 @@ class HeadlessSlot extends db.Slot {
   _updateZOrder() { }
   _updateBlendMode() { }
   _updateColor() { }
-  _updateFrame() { }
-  _updateMesh() { }
   _updateTransform() { }
   _identityTransform() { }
+
+  // Estático por display: UVs e índices de triângulo. Espelha o que
+  // EgretSlot._updateFrame escreve uma vez no MeshNode.
+  _updateFrame() {
+    if (this._geometryData === null) { return; }
+    const geometryData = this._geometryData;
+    const data = geometryData.data;
+    const intArray = data.intArray;
+    const floatArray = data.floatArray;
+    const vertexCount = intArray[geometryData.offset + BO.GeometryVertexCount];
+    const triangleCount = intArray[geometryData.offset + BO.GeometryTriangleCount];
+    let vertexOffset = intArray[geometryData.offset + BO.GeometryFloatOffset];
+    if (vertexOffset < 0) { vertexOffset += 65536; }
+    const uvOffset = vertexOffset + vertexCount * 2;
+
+    this._meshUvs = [];
+    for (let i = 0, l = vertexCount * 2; i < l; ++i) {
+      this._meshUvs[i] = floatArray[uvOffset + i];
+    }
+    this._meshIndices = [];
+    for (let i = 0, l = triangleCount * 3; i < l; ++i) {
+      this._meshIndices[i] = intArray[geometryData.offset + BO.GeometryVertexIndices + i];
+    }
+  }
+
+  // VERBATIM de EgretSlot._updateMesh (só a escrita no MeshNode foi trocada por
+  // um array local).
+  _updateMesh() {
+    const scale = this._armature._armatureData.scale;
+    const deformVertices = this._displayFrame.deformVertices;
+    const bones = this._geometryBones;
+    const geometryData = this._geometryData;
+    const weightData = geometryData.weight;
+
+    const hasDeform = deformVertices.length > 0 && geometryData.inheritDeform;
+    const vertices = [];
+
+    if (weightData !== null) {
+      const data = geometryData.data;
+      const intArray = data.intArray;
+      const floatArray = data.floatArray;
+      const vertexCount = intArray[geometryData.offset + BO.GeometryVertexCount];
+      let weightFloatOffset = intArray[weightData.offset + BO.WeigthFloatOffset];
+      if (weightFloatOffset < 0) { weightFloatOffset += 65536; }
+
+      for (
+        let i = 0, iD = 0, iB = weightData.offset + BO.WeigthBoneIndices + bones.length, iV = weightFloatOffset, iF = 0;
+        i < vertexCount;
+        ++i
+      ) {
+        const boneCount = intArray[iB++];
+        let xG = 0.0, yG = 0.0;
+
+        for (let j = 0; j < boneCount; ++j) {
+          const boneIndex = intArray[iB++];
+          const bone = bones[boneIndex];
+
+          if (bone !== null) {
+            const matrix = bone.globalTransformMatrix;
+            const weight = floatArray[iV++];
+            let xL = floatArray[iV++] * scale;
+            let yL = floatArray[iV++] * scale;
+
+            if (hasDeform) {
+              xL += deformVertices[iF++];
+              yL += deformVertices[iF++];
+            }
+
+            xG += (matrix.a * xL + matrix.c * yL + matrix.tx) * weight;
+            yG += (matrix.b * xL + matrix.d * yL + matrix.ty) * weight;
+          }
+        }
+
+        vertices[iD++] = xG;
+        vertices[iD++] = yG;
+      }
+    } else {
+      const data = geometryData.data;
+      const intArray = data.intArray;
+      const floatArray = data.floatArray;
+      const vertexCount = intArray[geometryData.offset + BO.GeometryVertexCount];
+      let vertexOffset = intArray[geometryData.offset + BO.GeometryFloatOffset];
+      if (vertexOffset < 0) { vertexOffset += 65536; }
+
+      for (let i = 0, l = vertexCount * 2; i < l; i += 2) {
+        let x = floatArray[vertexOffset + i] * scale;
+        let y = floatArray[vertexOffset + i + 1] * scale;
+
+        if (hasDeform) {
+          x += deformVertices[i];
+          y += deformVertices[i + 1];
+        }
+
+        vertices[i] = x;
+        vertices[i + 1] = y;
+      }
+    }
+
+    this._meshVertices = vertices;
+  }
 }
 
 class HeadlessTextureData extends db.TextureData {
@@ -121,6 +237,23 @@ function dumpState(armature) {
     const rotated = td ? !!td.rotated : false;
     const regionW = region ? region.width : 0;
     const regionH = region ? region.height : 0;
+
+    // Mesh slots carry a posed triangle list instead of a quad. Vertices come
+    // from the transcribed Egret `_updateMesh`; uvs/indices from `_updateFrame`.
+    let mesh = null;
+    if (s._geometryData) {
+      const geometryData = s._geometryData;
+      const intArray = geometryData.data.intArray;
+      mesh = {
+        vertexCount: intArray[geometryData.offset + BO.GeometryVertexCount],
+        triangleCount: intArray[geometryData.offset + BO.GeometryTriangleCount],
+        weighted: geometryData.weight !== null,
+        vertices: (s._meshVertices || []).map(r),
+        uvs: (s._meshUvs || []).map(r),
+        indices: (s._meshIndices || []).slice(),
+      };
+    }
+
     return {
       name: s.name,
       displayIndex: s.displayIndex,
@@ -141,9 +274,34 @@ function dumpState(armature) {
       zOrder: s._zOrder === undefined ? 0 : s._zOrder,
       blendMode: s._blendMode === undefined ? 0 : s._blendMode,
       displayType: s._geometryData ? 'mesh' : (td ? 'image' : null),
+      mesh,
+      // A slot holding a nested armature draws nothing itself; the child's own
+      // slots are reported so the port's flattening can be checked.
+      childArmatureName: s._childArmature ? s._childArmature.armatureData.name : null,
+      childSlots: s._childArmature ? dumpSlotList(s._childArmature) : null,
     };
   });
   return { bones, slots };
+}
+
+function dumpSlotList(armature) {
+  return armature.getSlots().map((s) => ({
+    name: s.name,
+    matrix: [r(s.globalTransformMatrix.a), r(s.globalTransformMatrix.b),
+             r(s.globalTransformMatrix.c), r(s.globalTransformMatrix.d),
+             r(s.globalTransformMatrix.tx), r(s.globalTransformMatrix.ty)],
+    zOrder: s._zOrder === undefined ? 0 : s._zOrder,
+    visible: !!s._visible,
+    blendMode: s._blendMode === undefined ? 0 : s._blendMode,
+    pivot: [r(s._pivotX), r(s._pivotY)],
+    textureName: s._textureData ? s._textureData.name : null,
+    mesh: s._geometryData ? {
+      vertexCount: s._geometryData.data.intArray[s._geometryData.offset + BO.GeometryVertexCount],
+      vertices: (s._meshVertices || []).map(r),
+      uvs: (s._meshUvs || []).map(r),
+      indices: (s._meshIndices || []).slice(),
+    } : null,
+  }));
 }
 
 function main() {

@@ -887,6 +887,23 @@ abstract class Slot extends TransformObject {
   /// Geometry of the current display when it is a deformable mesh, else null.
   GeometryData? get geometryData => this._geometryData;
 
+  /// The bones that skin the current mesh, in weight order.
+  ///
+  /// Empty for a plain mesh and for sprites. The order matters: the shared
+  /// weight arrays index into this list, so it must stay as built.
+  List<Bone?> get geometryBones => this._geometryBones;
+
+  /// Animated FFD offsets of the current display frame: `2 * vertexCount`
+  /// numbers, `x, y` interleaved; empty when nothing deforms the mesh.
+  ///
+  /// NOTE: nothing fills these yet. The parser reads the deform timelines and
+  /// `DisplayFrame.updateDeformVertices()` is ported, but the animation side
+  /// (`DeformTimelineState`, and the lazy call in `AnimationState`) is not — so
+  /// this is always empty today and mesh deformation comes from the bone
+  /// weights alone. The consumer in [buildMeshGeometry] is written for it.
+  List<double> get deformVertices =>
+      this._displayFrame?.deformVertices ?? const <double>[];
+
   /// Anchor that sits on the slot origin, in display pixels.
   double get pivotX => this._pivotX;
   double get pivotY => this._pivotY;

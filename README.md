@@ -47,20 +47,23 @@ Because the Dart port has **zero external dependencies**, it can be verified wit
 a bare Dart SDK — no Flutter, no device, no eyeballing pixels. Flutter is only
 needed for the render layer, which is the one part that genuinely needs eyes.
 
-The oracle harness is verified working: `Dragon` (19 bones, sprites only, 4
-animations) and `龙` (60 bones, 29 slots, deformable meshes, IK) both dump
-cleanly. See `doc/FINDINGS.md` for the full investigation.
+The oracle harness is verified working on all three fixtures: `Dragon` (19 bones,
+sprites only, 4 animations), `龙` (60 bones, 29 slots, 5 deformable meshes, FFD
+timelines, IK) and `mecha_1004d` (4 armatures in one file, 3 of them nested
+inside slots of the first). See `doc/FINDINGS.md` for the full investigation.
 
 ## Status
 
 | Piece | State |
 | --- | --- |
-| Oracle harness (node + official runtime) | ✅ working — both fixtures dump |
+| Oracle harness (node + official runtime) | ✅ working — all three fixtures dump |
 | Reference dumps committed | ✅ `tool/ground_truth/out/*.json` |
-| Dart runtime port | ✅ **milestone 1 verified** — `Dragon` (sprites, bone timelines) matches the official runtime to ~5e-7 |
-| Canvas renderer (`update` + `render`), no engine coupling | ✅ sprites |
+| Dart runtime port | ✅ **verified** — bone matrices, sprite draw data, mesh geometry and nested armatures all match the official runtime to ~5e-7 |
+| Canvas renderer (`update` + `render`), no engine coupling | ✅ sprites **and** meshes (`drawVertices`) |
+| Nested child armatures | ✅ built, animated and flattened into the draw list |
 | Example Flutter app | ✅ `example/` — run it to see it |
-| Deform meshes / `drawVertices` | 🚧 milestone 2 |
+| FFD / deform timelines | ✅ ported (`DeformTimelineState`) |
+| Path constraints, `Surface` bones, animation events (`EventObject`) | 🚧 not ported |
 
 ### The renderer is not coupled to any engine
 
@@ -83,7 +86,7 @@ The renderer never mutates engine objects: the runtime is driven through a
 renderer-less factory and the pose is read back as a `SlotDrawData` list. That is
 also why the geometry is verifiable without a GPU.
 
-### Milestone 1 result
+### Verification result
 
 ```
   rest     2 frames, 19 bones,  36 slot draw-data, max err 4.945e-7  OK
@@ -91,31 +94,47 @@ also why the geometry is verifiable without a GPU.
   walk    21 frames, 19 bones, 378 slot draw-data, max err 4.997e-7  OK
   jump     6 frames, 19 bones, 108 slot draw-data, max err 4.987e-7  OK
   fall     6 frames, 19 bones, 108 slot draw-data, max err 4.992e-7  OK
+  long    31 frames, 60 bones, 899 slot draw-data, 21173 mesh values, max err 5.000e-7  OK
+  mecha   59 frames, 20 bones, 826 slot draw-data, max err 5.202e-5  OK
 
-33660 numeric comparisons, 0 mismatches (tolerance 0.0001)
+172925 numeric comparisons, 0 mismatches (tolerance 0.0001)
+21173 mesh values, 118 nested-armature slots
 RESULT: PASS
 ```
 
-Checked per frame: every bone's global matrix, **and** every slot's draw data —
-world matrix, pivot, quad size, atlas region, z-order, visibility, blend mode and
-colour. That is the complete geometry a renderer needs, so drawing it is a thin,
-low-risk step rather than guesswork.
+Checked per frame: every bone's global matrix, every slot's draw data (world
+matrix, pivot, quad size, atlas region, z-order, visibility, blend mode, colour),
+every mesh's **posed vertices, UVs and triangle indices**, and every nested
+armature's slots with the parent slot's matrix composed onto them. That is the
+complete geometry a renderer needs, so drawing it is a thin, low-risk step rather
+than guesswork.
 
 ~5e-7 is the rounding precision of the reference dumps themselves, so the port is
-effectively exact. `dart analyze` is clean and both checks run in CI.
+effectively exact (`mecha` reaches 5.2e-5 purely because composing two matrices
+per child slot compounds the dump's own rounding). `dart analyze` is clean and
+all checks run in CI.
 
-Not yet: deform meshes / FFD, IK constraints (the `龙` fixture), and the canvas
-renderer.
+**One caveat worth stating plainly**: the oracle for *mesh* geometry is the
+official **Egret binding** (`.ref/egret-binding/EgretSlot.ts`), not the core
+runtime — because in DragonBones the per-vertex deformation lives in the engine
+binding: `Slot._updateMesh` is abstract and the core never implements it. So that
+transcription is the reference, and it is transcribed verbatim in both the oracle
+(`tool/ground_truth/dump.js`) and the port
+(`packages/dragonbones/lib/src/render/mesh_geometry.dart`).
+
+Not yet: path constraints, `Surface` bones, animation events (`EventObject`),
+and `SlotZIndex` / `SlotAlpha` timelines.
 
 ## Fixtures
 
-Two animations exported with DragonBones Pro 5.6, format version **5.5**.
+Three animations exported with DragonBones Pro 5.6, format version **5.5**.
 They are a deliberate ladder:
 
-| Fixture | Bones | Slots | Features | Milestone |
-| --- | ---: | ---: | --- | --- |
-| `Dragon` | 19 | 18 | sprites only, 4 animations (`stand`/`walk`/`jump`/`fall`) | 1 |
-| `龙` | 60 | 29 | 5 deform meshes, FFD timeline, IK, 1 animation | 2 |
+| Fixture | Bones | Slots | Features |
+| --- | ---: | ---: | --- |
+| `Dragon` | 19 | 18 | sprites only, 4 animations (`stand`/`walk`/`jump`/`fall`) |
+| `龙` | 60 | 29 | 5 deform meshes (2 skinned), FFD timeline, IK, 1 animation |
+| `mecha_1004d` | 20 | 18 | 4 armatures in one file, 3 nested in slots, 10 animations |
 
 Assets come from the DragonBones assets shipped with
 [Godot-DragonBones](https://github.com/DragonBones/Godot-DragonBones)
@@ -142,7 +161,8 @@ tool/ground_truth/run_all.sh    regenerates every dump
 tool/ground_truth/out/*.json    committed reference dumps
 test/fixtures/                  DragonBones assets used by both sides
 packages/dragonbones/           pure Dart runtime (no deps, no Flutter)
-packages/flame_dragon_bones/    Flame/Bonfire component (drawVertices)
+packages/dragonbones_flutter/   Canvas renderer: update() + render(), sprites + meshes
+example/                        minimal Flutter app (dragon / mecha / 龙)
 doc/FINDINGS.md                 investigation notes + evidence
 ```
 

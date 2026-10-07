@@ -298,6 +298,9 @@ class AnimationState extends BaseObject {
     {
       // Update slot timelines.
       final slotTimelines = <String, List<TimelineState>>{};
+      // Geometry offsets that already have an FFD timeline this pass, so the
+      // pose fallback does not add a second one for the same mesh.
+      final ffdFlags = <int>[];
       // Create slot timelines map.
       for (final timeline in this._slotTimelines) {
         final timelineName = (timeline.target as Slot).name;
@@ -323,6 +326,7 @@ class AnimationState extends BaseObject {
           // Create new slot timeline.
           var displayIndexFlag = false;
           var colorFlag = false;
+          ffdFlags.clear();
 
           final timelineDatas = this._animationData!.getSlotTimelines(timelineName);
           if (timelineDatas != null) {
@@ -348,8 +352,44 @@ class AnimationState extends BaseObject {
                     break;
                   }
 
-                // Milestone 2: SlotZIndex / SlotDeform / SlotAlpha timelines
-                // are not ported.
+                case TimelineType.SlotDeform:
+                  {
+                    final dragonBonesData = this._animationData!.parent!.parent!;
+                    final timelineArray = dragonBonesData.timelineArray!;
+                    final frameIntOffset = this._animationData!.frameIntOffset +
+                        timelineArray[timelineData.offset + BinaryOffset.TimelineFrameValueCount] as int;
+                    final frameIntArray = dragonBonesData.frameIntArray!;
+                    var geometryOffset = frameIntArray[frameIntOffset + BinaryOffset.DeformVertexOffset];
+
+                    if (geometryOffset < 0) {
+                      geometryOffset += 65536; // Fixed out of bounds bug.
+                    }
+
+                    for (var i = 0, l = slot.displayFrameCount; i < l; ++i) {
+                      final displayFrame = slot.getDisplayFrameAt(i);
+                      final geometryData = displayFrame.getGeometryData();
+
+                      if (geometryData == null) {
+                        continue;
+                      }
+
+                      if (geometryData.offset == geometryOffset) {
+                        final timeline = DeformTimelineState();
+                        timeline.target = this._armature!.animation
+                            .getBlendState(BlendState.SLOT_DEFORM, displayFrame.rawDisplayData!.name, slot);
+                        timeline.displayFrame = displayFrame;
+                        timeline.init(this._armature!, this, timelineData);
+                        this._slotBlendTimelines.add(timeline);
+
+                        displayFrame.updateDeformVertices();
+                        ffdFlags.add(geometryOffset);
+                        break;
+                      }
+                    }
+                    break;
+                  }
+
+                // Milestone 2: SlotZIndex / SlotAlpha timelines are not ported.
                 default:
                   break;
               }
@@ -374,7 +414,26 @@ class AnimationState extends BaseObject {
               this._poseTimelines.add(timeline);
             }
 
-            // Milestone 2: deform pose timelines.
+            // Pose deform timelines: a display frame that already has deform
+            // vertices (from `updateDeformVertices`) needs one to zero them.
+            for (var i = 0, l = slot.displayFrameCount; i < l; ++i) {
+              final displayFrame = slot.getDisplayFrameAt(i);
+
+              if (displayFrame.deformVertices.isEmpty) {
+                continue;
+              }
+
+              final geometryData = displayFrame.getGeometryData();
+              if (geometryData != null && !ffdFlags.contains(geometryData.offset)) {
+                final timeline = DeformTimelineState();
+                timeline.displayFrame = displayFrame;
+                timeline.target = this._armature!.animation
+                    .getBlendState(BlendState.SLOT_DEFORM, slot.name, slot);
+                timeline.init(this._armature!, this, null);
+                this._slotBlendTimelines.add(timeline);
+                this._poseTimelines.add(timeline);
+              }
+            }
           }
         }
       }

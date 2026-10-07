@@ -1,15 +1,23 @@
 /*
  * Pure-Dart port of the DragonBones 2D skeletal-animation runtime.
  *
- * Milestone 1: text/JSON format 5.5, sprites only, bone timelines
- * (translate/rotate/scale/all), slot display/color timelines.
+ * Covers the DragonBones 5.5 text/JSON format: bone timelines
+ * (translate/rotate/scale/all), slot display/colour timelines, deform (FFD)
+ * timelines, sprites, deformable meshes (including skinned ones) and nested
+ * child armatures.
  *
  * The port follows the upstream TypeScript sources closely (same class and
  * member names, including the `_`-prefixed fields the upstream keeps public)
  * so it can be diffed against `.ref/dragonBones-ts/`.
  *
- * Only `dart:math`, `dart:convert` and `dart:typed_data` are used; there are
- * no third-party or `package:` dependencies.
+ * Two deliberate deviations from the upstream, both documented where they
+ * appear: the object pool is gone (Dart's GC handles it — but `BaseObject`'s
+ * constructor still calls `_onClear()`, because upstream's `borrowObject` always
+ * does and several classes set their default state there), and JS array growth
+ * (`.length = n`) is replaced with explicit sizing.
+ *
+ * Only `dart:math` and `dart:typed_data` are used; there are no third-party or
+ * `package:` dependencies.
  */
 library dragonbones;
 
@@ -43,6 +51,7 @@ part 'src/animation/animation.dart';
 part 'src/factory/base_factory.dart';
 part 'src/factory/headless_factory.dart';
 part 'src/render/draw_data.dart';
+part 'src/render/mesh_geometry.dart';
 
 /// JavaScript-compatible remainder (`a % b` truncates towards zero).
 double _jsMod(double a, double b) => a - b * (a / b).truncateToDouble();

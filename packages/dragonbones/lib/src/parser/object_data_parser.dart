@@ -2343,12 +2343,15 @@ class ObjectDataParser extends DataParser {
       if (_has(rawData, DataParser.BONE_POSE)) {
         final rawSlotPose = (rawData[DataParser.SLOT_POSE] as List<dynamic>).cast<num>();
         final rawBonePoses = (rawData[DataParser.BONE_POSE] as List<dynamic>).cast<num>();
-        final weightBoneIndices = List<int>.filled(weightBoneCount, 0);
 
+        // NOTE: upstream creates `weightBoneIndices` as a plain JS array and
+        // grows it with `.length = weightBoneCount`. Both that and the int
+        // array's own growth rely on JS arrays auto-extending on write. Dart
+        // lists do neither, so the count is resolved first and the backing
+        // arrays are sized explicitly.
         weightBoneCount = (rawBonePoses.length / 7).floor(); // uint
-        if (weightBoneIndices.length != weightBoneCount) {
-          weightBoneIndices.length = weightBoneCount;
-        }
+        _growInt(this._intArray, weightBoneCount);
+        final weightBoneIndices = List<int>.filled(weightBoneCount, 0);
 
         for (var i = 0; i < weightBoneCount; ++i) {
           final rawBoneIndex = _intOf(rawBonePoses[i * 7]); // uint
@@ -2389,6 +2392,7 @@ class ObjectDataParser extends DataParser {
       } else {
         final rawBones = rawData[DataParser.BONES] as List<dynamic>;
         weightBoneCount = rawBones.length;
+        _growInt(this._intArray, weightBoneCount);
 
         for (var i = 0; i < weightBoneCount; i++) {
           final rawBoneIndex = _intOf(rawBones[i]);

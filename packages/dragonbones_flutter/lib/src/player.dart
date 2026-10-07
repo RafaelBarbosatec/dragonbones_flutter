@@ -47,9 +47,10 @@ class DragonBonesPlayer {
   /// Translation applied before drawing, in canvas units.
   Offset offset;
 
-  /// Whether to draw meshes. Milestone 1 only handles sprites; mesh slots are
-  /// skipped (and counted in [skippedMeshSlots]) until deformation lands.
-  bool drawMeshes = false;
+  /// Whether to draw deformable meshes. Meshes are drawn as triangle lists via
+  /// `Canvas.drawVertices`; turning this off skips them (and counts them in
+  /// [skippedMeshSlots]) which is useful when debugging sprite-only renders.
+  bool drawMeshes = true;
 
   /// Slots skipped during the last [render] because they hold a deformable mesh.
   int skippedMeshSlots = 0;
@@ -91,10 +92,6 @@ class DragonBonesPlayer {
       if (!data.visible) {
         continue;
       }
-      if (data.isMesh && !drawMeshes) {
-        skippedMeshSlots++;
-        continue;
-      }
 
       final texture = data.texture;
       final region = data.region;
@@ -108,9 +105,100 @@ class DragonBonesPlayer {
         continue;
       }
 
+      final mesh = data.mesh;
+      if (mesh != null) {
+        if (!drawMeshes) {
+          skippedMeshSlots++;
+          continue;
+        }
+        _drawMesh(canvas, image, data, mesh, region);
+        continue;
+      }
+
       _drawSprite(canvas, image, data, region);
     }
 
+    canvas.restore();
+  }
+
+  /// Draws a deformable mesh as a textured triangle list.
+  ///
+  /// Unlike a sprite, a mesh is not a quad, so `drawImageRect` cannot express
+  /// it: the vertices come from the runtime already posed (rest positions,
+  /// bone weights and FFD all resolved on the CPU — DragonBones does no
+  /// per-vertex work on the GPU), and [Canvas.drawVertices] takes them as-is.
+  ///
+  /// The texture coordinates are in **atlas pixels**, because that is what an
+  /// [ui.ImageShader] consumes. The runtime hands over UVs normalised to the
+  /// atlas *sub-texture* (0..1 across `region`), which is also how the official
+  /// Egret binding reads them (`MeshNode.drawMesh(bitmapX, bitmapY,
+  /// bitmapWidth, bitmapHeight, ...)`), so they are mapped onto the region here.
+  void _drawMesh(
+    Canvas canvas,
+    ui.Image image,
+    db.SlotDrawData data,
+    db.MeshGeometry mesh,
+    List<double> region,
+  ) {
+    final m = data.matrix;
+
+    canvas.save();
+    canvas.transform(Float64List.fromList(<double>[
+      m.a, m.b, 0, 0, //
+      m.c, m.d, 0, 0, //
+      0, 0, 1, 0, //
+      m.tx, m.ty, 0, 1, //
+    ]));
+
+    // The pivot is always 0 for a mesh (the runtime zeroes it), but keep the
+    // same anchor maths as the sprite path rather than assume it.
+    canvas.translate(-data.pivotX, -data.pivotY);
+
+    final count = mesh.vertexCount;
+    final positions = Float32List(count * 2);
+    final texCoords = Float32List(count * 2);
+    for (var i = 0; i < count * 2; i += 2) {
+      positions[i] = mesh.vertices[i];
+      positions[i + 1] = mesh.vertices[i + 1];
+      texCoords[i] = region[0] + mesh.uvs[i] * region[2];
+      texCoords[i + 1] = region[1] + mesh.uvs[i + 1] * region[3];
+    }
+
+    final vertices = ui.Vertices.raw(
+      ui.VertexMode.triangles,
+      positions,
+      textureCoordinates: texCoords,
+      indices: Uint16List.fromList(mesh.triangles),
+    );
+
+    final paint = Paint()
+      ..filterQuality = ui.FilterQuality.medium
+      ..isAntiAlias = true
+      ..blendMode = _blendMode(data.blendMode)
+      ..shader = ui.ImageShader(
+        image,
+        ui.TileMode.clamp,
+        ui.TileMode.clamp,
+        // The vertex UVs are already in atlas pixels, so the shader needs no
+        // extra transform.
+        Float64List.fromList(<double>[
+          1, 0, 0, 0, //
+          0, 1, 0, 0, //
+          0, 0, 1, 0, //
+          0, 0, 0, 1, //
+        ]),
+      );
+
+    final filter = _colorFilter(data.color);
+    if (filter != null) {
+      paint.colorFilter = filter;
+    }
+
+    // No per-vertex colours are supplied, so the shader alone provides the
+    // pixels and the blend mode is a formality.
+    canvas.drawVertices(vertices, ui.BlendMode.srcOver, paint);
+
+    vertices.dispose();
     canvas.restore();
   }
 

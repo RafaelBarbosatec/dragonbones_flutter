@@ -606,3 +606,112 @@ class SlotColorTimelineState extends TweenTimelineState {
     }
   }
 }
+
+/// @internal
+///
+/// Animated FFD: writes per-vertex offsets into the display frame's
+/// `deformVertices`, which the mesh deformer then adds on top of the rest
+/// positions.
+///
+/// Ported from `.ref/dragonBones-ts/animation/TimelineState.ts`
+/// (`DeformTimelineState`). Note that this is a *blend* timeline: its target is
+/// a [BlendState], not the slot, because deform offsets accumulate across
+/// animation layers.
+class DeformTimelineState extends MutilpleValueTimelineState {
+  DisplayFrame? displayFrame;
+
+  int _deformCount = 0;
+  int _deformOffset = 0;
+  int _sameValueOffset = 0;
+
+  @override
+  void _onClear() {
+    super._onClear();
+
+    this.displayFrame = null;
+    this._deformCount = 0;
+    this._deformOffset = 0;
+    this._sameValueOffset = 0;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    if (this._timelineData != null) {
+      final frameIntOffset = this._animationData!.frameIntOffset +
+          this._timelineArray![this._timelineData!.offset + BinaryOffset.TimelineFrameValueCount] as int;
+      final dragonBonesData = this._animationData!.parent!.parent!;
+      final frameIntArray = dragonBonesData.frameIntArray!;
+
+      this._valueOffset = this._animationData!.frameFloatOffset;
+      this._valueCount = frameIntArray[frameIntOffset + BinaryOffset.DeformValueCount];
+      this._deformCount = frameIntArray[frameIntOffset + BinaryOffset.DeformCount];
+      this._deformOffset = frameIntArray[frameIntOffset + BinaryOffset.DeformValueOffset];
+      this._sameValueOffset = frameIntArray[frameIntOffset + BinaryOffset.DeformFloatOffset];
+
+      if (this._sameValueOffset < 0) {
+        this._sameValueOffset += 65536; // Fixed out of bounds bug.
+      }
+
+      this._sameValueOffset += this._animationData!.frameFloatOffset;
+      this._valueScale = this._armature!.armatureData.scale;
+      this._valueArray = dragonBonesData.frameFloatArray;
+
+      // NOTE: upstream does `this._rd.length = this._valueCount * 2`, which a
+      // JS array tolerates. Dart needs the slots to exist before writing.
+      this._rd.clear();
+      for (var i = 0, l = this._valueCount * 2; i < l; ++i) {
+        this._rd.add(0.0);
+      }
+    } else {
+      this._deformCount = this.displayFrame!.deformVertices.length;
+    }
+  }
+
+  @override
+  void blend(bool isDirty) {
+    final BlendState blendState = this.target as BlendState;
+    final Slot slot = blendState.target as Slot;
+    final double blendWeight = blendState.blendWeight;
+    final List<double> result = this.displayFrame!.deformVertices;
+    final List<num>? valueArray = this._valueArray;
+
+    if (valueArray != null) {
+      final int valueCount = this._valueCount;
+      final int deformOffset = this._deformOffset;
+      final int sameValueOffset = this._sameValueOffset;
+      final List<double> rd = this._rd;
+
+      for (var i = 0; i < this._deformCount; ++i) {
+        double value;
+
+        if (i < deformOffset) {
+          value = valueArray[sameValueOffset + i].toDouble();
+        } else if (i < deformOffset + valueCount) {
+          value = rd[i - deformOffset];
+        } else {
+          value = valueArray[sameValueOffset + i - valueCount].toDouble();
+        }
+
+        if (blendState.dirty > 1) {
+          result[i] += value * blendWeight;
+        } else {
+          result[i] = value * blendWeight;
+        }
+      }
+    } else if (blendState.dirty == 1) {
+      for (var i = 0; i < this._deformCount; ++i) {
+        result[i] = 0.0;
+      }
+    }
+
+    if (isDirty || this.dirty) {
+      this.dirty = false;
+
+      if (identical(slot.geometryData, this.displayFrame!.getGeometryData())) {
+        slot._verticesDirty = true;
+      }
+    }
+  }
+}

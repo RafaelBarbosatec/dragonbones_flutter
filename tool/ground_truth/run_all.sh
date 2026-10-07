@@ -22,6 +22,10 @@ node tool/ground_truth/dump.js "$FIX/Dragon_ske.json" "$FIX/Dragon_tex.json" \
 node tool/ground_truth/dump.js "$FIX/龙_ske.json" "$FIX/龙_tex.json" \
   stand "$OUT/Long_stand.json"
 
+# mecha_1004d: quatro armatures num arquivo, três aninhadas em slots da primeira
+node tool/ground_truth/dump.js example/assets/mecha_1004d/ske.json \
+  example/assets/mecha_1004d/tex.json walk "$OUT/Mecha_walk.json"
+
 echo
 echo "gabaritos gerados em $OUT:"
 ls -la "$OUT"
