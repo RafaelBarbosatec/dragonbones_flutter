@@ -1,0 +1,4 @@
+# The verification scripts read the reference dumps and fixtures from the
+# repository root, which is outside this package — shipping them would ship
+# something that cannot run. They stay in the repository.
+tool/

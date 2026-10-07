@@ -19,14 +19,19 @@ import 'package:flutter_test/flutter_test.dart';
 /// `packages/dragonbones/tool/check_against_oracle.dart`.
 void main() {
   final fixtures = _discoverFixtures();
+
+  if (fixtures.isEmpty) {
+    // The sweep fixtures live in the repository, not in this package. Running the
+    // package's tests standalone (unpacked from the pub cache, say) must skip
+    // rather than fail.
+    test('Unity fixture sweep', () {}, skip: 'no fixtures at ../../test/fixtures/unity '
+        '— run tool/ground_truth/fetch_fixtures.sh from the repository');
+    return;
+  }
+
   var meshSlotsSeen = 0;
   var assetsWithMeshes = 0;
   var assetsWithNestedArmatures = 0;
-
-  test('the sweep found fixtures', () {
-    expect(fixtures, isNotEmpty,
-        reason: 'run tool/ground_truth/fetch_fixtures.sh first');
-  });
 
   for (final fixture in fixtures) {
     test('renders ${fixture.id}', () async {
