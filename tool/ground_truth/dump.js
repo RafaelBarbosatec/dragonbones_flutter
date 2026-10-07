@@ -310,6 +310,7 @@ function main() {
   const texPath = args[1] && args[1] !== '-' ? args[1] : null;
   const animName = args[2] && args[2] !== '-' ? args[2] : null;
   const outPath = args[3] || null;
+  const fixtureId = args[4] || path.basename(skePath);
 
   const factory = new HeadlessFactory();
 
@@ -328,7 +329,15 @@ function main() {
 
   const anim = armature.animation;
   const animationNames = armature.armatureData.animationNames;
-  if (animName) anim.play(animName);
+
+  // `auto` picks the first animation the asset declares, so the sweep can walk
+  // every fixture without a hand-written manifest of animation names. Assets
+  // with no animations at all stay on the rest pose, same as `-`.
+  let playName = animName;
+  if (playName === 'auto') {
+    playName = animationNames.length > 0 ? animationNames[0] : null;
+  }
+  if (playName) anim.play(playName);
 
   const state0 = anim.lastAnimationState;
   const duration = state0 ? state0.totalTime : 0;
@@ -348,7 +357,10 @@ function main() {
     frameRate,
     armatureName,
     animationNames,
-    animation: animName,
+    animation: playName,
+    // Identifier the Dart checker uses to find the matching source files. The
+    // sweep passes the path relative to test/fixtures/unity.
+    fixture: fixtureId,
     duration: r(duration),
     totalFrames,
     boneCount: armature.getBones().length,

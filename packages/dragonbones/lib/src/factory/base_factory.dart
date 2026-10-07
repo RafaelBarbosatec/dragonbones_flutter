@@ -205,11 +205,36 @@ abstract class BaseFactory {
 
   /// @internal
   ///
-  /// Constraints (IK / path) are milestone 2. The upstream builds and registers
-  /// them here; this port intentionally does nothing so that armatures with
-  /// constraints still build (their bones simply are not constrained).
+  /// Builds the runtime constraints declared by the armature. Order matters:
+  /// [Bone.update] walks the armature's constraint list and applies the ones
+  /// rooted at it, so constraints sharing a root resolve in declaration order —
+  /// which is what upstream's `for...in` over the constraint map gives too.
+  ///
+  /// `PathConstraint` is not ported (no supported fixture uses one); those are
+  /// skipped rather than approximated, and the bone chains they would drive keep
+  /// their plain transforms.
   void _buildConstraints(BuildArmaturePackage dataPackage, Armature armature) {
-    // Intentionally empty — see doc comment.
+    for (final constraintData in dataPackage.armature!.constraints.values) {
+      switch (constraintData.type) {
+        case ConstraintType.IK:
+          final ikConstraint = IKConstraint();
+          ikConstraint.init(constraintData, armature);
+          armature._addConstraint(ikConstraint);
+          break;
+
+        case ConstraintType.Path:
+          // Not ported — see doc comment.
+          break;
+
+        default:
+          // Upstream falls back to IK for unknown types; mirrored so a file with
+          // a newer constraint kind behaves the same way in both runtimes.
+          final constraint = IKConstraint();
+          constraint.init(constraintData, armature);
+          armature._addConstraint(constraint);
+          break;
+      }
+    }
   }
 
   /// @internal

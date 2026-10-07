@@ -47,23 +47,25 @@ Because the Dart port has **zero external dependencies**, it can be verified wit
 a bare Dart SDK — no Flutter, no device, no eyeballing pixels. Flutter is only
 needed for the render layer, which is the one part that genuinely needs eyes.
 
-The oracle harness is verified working on all three fixtures: `Dragon` (19 bones,
-sprites only, 4 animations), `龙` (60 bones, 29 slots, 5 deformable meshes, FFD
-timelines, IK) and `mecha_1004d` (4 armatures in one file, 3 of them nested
-inside slots of the first). See `doc/FINDINGS.md` for the full investigation.
+The oracle harness is verified working on all three hand-picked fixtures — `Dragon`
+(19 bones, sprites only), `龙` (60 bones, 5 deformable meshes, FFD, IK) and
+`mecha_1004d` (4 armatures in one file, 3 nested) — **and on all 44 assets from the
+DragonBones Unity SDK demos**, which is the sweep CI actually gates on. See
+`doc/FINDINGS.md` for the full investigation.
 
 ## Status
 
 | Piece | State |
 | --- | --- |
-| Oracle harness (node + official runtime) | ✅ working — all three fixtures dump |
-| Reference dumps committed | ✅ `tool/ground_truth/out/*.json` |
-| Dart runtime port | ✅ **verified** — bone matrices, sprite draw data, mesh geometry and nested armatures all match the official runtime to ~5e-7 |
+| Oracle harness (node + official runtime) | ✅ working — every fixture dumps |
+| Reference dumps committed | ✅ `tool/ground_truth/out/*.json` (holds the whole sweep) |
+| Dart runtime port | ✅ **verified** — 51 assets, 757k numeric comparisons, 0 mismatches |
 | Canvas renderer (`update` + `render`), no engine coupling | ✅ sprites **and** meshes (`drawVertices`) |
 | Nested child armatures | ✅ built, animated and flattened into the draw list |
-| Example Flutter app | ✅ `example/` — run it to see it |
 | FFD / deform timelines | ✅ ported (`DeformTimelineState`) |
-| Path constraints, `Surface` bones, animation events (`EventObject`) | 🚧 not ported |
+| IK constraints | ✅ ported (`IKConstraint`) |
+| Example Flutter app | ✅ `example/` — run it to see it |
+| Path constraints, `Surface` bones, animation events (`EventObject`), `SlotZIndex` / `SlotAlpha` timelines | 🚧 not ported |
 
 ### The renderer is not coupled to any engine
 
@@ -89,16 +91,26 @@ also why the geometry is verifiable without a GPU.
 ### Verification result
 
 ```
-  rest     2 frames, 19 bones,  36 slot draw-data, max err 4.945e-7  OK
-  stand   31 frames, 19 bones, 558 slot draw-data, max err 5.000e-7  OK
-  walk    21 frames, 19 bones, 378 slot draw-data, max err 4.997e-7  OK
-  jump     6 frames, 19 bones, 108 slot draw-data, max err 4.987e-7  OK
-  fall     6 frames, 19 bones, 108 slot draw-data, max err 4.992e-7  OK
-  long    31 frames, 60 bones, 899 slot draw-data, 21173 mesh values, max err 5.000e-7  OK
-  mecha   59 frames, 20 bones, 826 slot draw-data, max err 5.202e-5  OK
+  rest                           2 frames, 19 bones,  36 slot draw-data, max err 4.945e-7  OK
+  stand                         31 frames, 19 bones, 558 slot draw-data, max err 5.000e-7  OK
+  walk                          21 frames, 19 bones, 378 slot draw-data, max err 4.997e-7  OK
+  jump                           6 frames, 19 bones, 108 slot draw-data, max err 4.987e-7  OK
+  fall                           6 frames, 19 bones, 108 slot draw-data, max err 4.992e-7  OK
+  long                          31 frames, 60 bones, 899 slot draw-data, 21173 mesh values, max err 5.000e-7  OK
+  mecha                         59 frames, 20 bones, 826 slot draw-data, 118 child slots, max err 5.202e-5  OK
+  bounding_box_tester            2 frames,  6 bones,   2 slot draw-data,  16 child slots, max err 0.000e+0  OK
+  mecha_1002_101d_light         81 frames, 20 bones, 1458 slot draw-data, 81 child slots, max err 2.908e-5  OK
+  mecha_1406                    61 frames, 17 bones, 793 slot draw-data, max err 4.999e-7  OK
+  mecha_2903                     2 frames, 35 bones,  70 slot draw-data, max err 5.000e-7  OK
+  progress_bar                 101 frames,  5 bones, 303 slot draw-data, 606 child slots, max err 3.968e-6  OK
+  skin_1502b                     2 frames, 17 bones,  24 slot draw-data, max err 4.956e-7  OK
+  weapon_1004_show               6 frames,  2 bones,   5 slot draw-data,  45 mesh values, max err 4.741e-7  OK
+  you_xin/body                  71 frames, 70 bones, 6816 slot draw-data, 47357 mesh values, max err 5.000e-7  OK
+  you_xin/suit2/20106010         2 frames, 20 bones,   2 slot draw-data, 630 mesh values, max err 4.999e-7  OK
+  … 35 more …                                                                            all OK
 
-172925 numeric comparisons, 0 mismatches (tolerance 0.0001)
-21173 mesh values, 118 nested-armature slots
+757701 numeric comparisons over 51 assets (51 clean, 0 failing)
+74245 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
@@ -110,9 +122,10 @@ complete geometry a renderer needs, so drawing it is a thin, low-risk step rathe
 than guesswork.
 
 ~5e-7 is the rounding precision of the reference dumps themselves, so the port is
-effectively exact (`mecha` reaches 5.2e-5 purely because composing two matrices
-per child slot compounds the dump's own rounding). `dart analyze` is clean and
-all checks run in CI.
+effectively exact. The few values that peak higher (`mecha` at 5.2e-5, `mecha_1002_101d`
+at 2.9e-5) are the assets with nested armatures, where composing two matrices per
+child slot compounds the dumps' own rounding. `dart analyze` is clean and the whole
+sweep runs in CI.
 
 **One caveat worth stating plainly**: the oracle for *mesh* geometry is the
 official **Egret binding** (`.ref/egret-binding/EgretSlot.ts`), not the core
@@ -122,23 +135,33 @@ transcription is the reference, and it is transcribed verbatim in both the oracl
 (`tool/ground_truth/dump.js`) and the port
 (`packages/dragonbones/lib/src/render/mesh_geometry.dart`).
 
-Not yet: path constraints, `Surface` bones, animation events (`EventObject`),
-and `SlotZIndex` / `SlotAlpha` timelines.
+Two more things the sweep does **not** judge, stated so they are not mistaken for
+coverage: how any of it *looks* (no GPU on a runner — the Flutter tests rasterise
+to prove pixels are produced, not that they are pretty), and assets that need the
+features still listed as unported above.
 
 ## Fixtures
 
-Three animations exported with DragonBones Pro 5.6, format version **5.5**.
-They are a deliberate ladder:
+Three hand-picked animations plus the whole Unity SDK demo set (format version
+**5.5**), a deliberate ladder:
 
 | Fixture | Bones | Slots | Features |
 | --- | ---: | ---: | --- |
 | `Dragon` | 19 | 18 | sprites only, 4 animations (`stand`/`walk`/`jump`/`fall`) |
 | `龙` | 60 | 29 | 5 deform meshes (2 skinned), FFD timeline, IK, 1 animation |
 | `mecha_1004d` | 20 | 18 | 4 armatures in one file, 3 nested in slots, 10 animations |
+| `unity/*` | 1–70 | 1–96 | 44 assets from the Unity SDK demos: nested armatures, skinned meshes, FFD, active IK, skin swapping |
 
-Assets come from the DragonBones assets shipped with
-[Godot-DragonBones](https://github.com/DragonBones/Godot-DragonBones)
-(`demo/dragonbones_demo/assets`). They are animation *data*, MIT-licensed.
+The first three are hand-picked from the DragonBones assets shipped with
+[Godot-DragonBones](https://github.com/DragonBones/Godot-DragonBones); the sweep
+comes from the
+[DragonBones Unity SDK](https://github.com/DragonBones/DragonBonesUnity)
+(`Assets/DragonBones/Demos/Resources`). Both are animation *data*, MIT-licensed.
+
+The sweep is fetched, not vendored: `tool/ground_truth/fetch_fixtures.sh` pulls the
+skeleton/atlas JSON from a pinned revision (~1.6 MB, committed) and leaves the
+11 MB of atlas images out — the geometry oracle reads regions and names out of the
+tex JSON and never opens the PNGs. `--with-images` grabs them when you want pixels.
 
 ## Running
 
@@ -146,24 +169,34 @@ Assets come from the DragonBones assets shipped with
 # 1. get the oracle runtime (clones + compiles the official TS runtime)
 tool/ground_truth/fetch_runtime.sh
 
-# 2. regenerate every reference dump
+# 2. get the Unity SDK sweep fixtures (JSON only; ~1.6 MB)
+tool/ground_truth/fetch_fixtures.sh
+
+# 3. regenerate every reference dump (named ladder + the whole sweep)
 tool/ground_truth/run_all.sh
 
-# 3. (once the port exists) check the Dart port against the dumps
+# 4. check the Dart port against the dumps — this is the real test
 dart run packages/dragonbones/tool/check_against_oracle.dart
 ```
+
+Step 4 replays every asset frame by frame and diffs it against the official
+runtime. It exits non-zero on the first asset that drifts, crashes or is missing a
+dump, and prints one line per asset so a slow one never looks like a hang.
 
 ## Layout
 
 ```
-tool/ground_truth/dump.js       headless oracle: official runtime -> JSON
-tool/ground_truth/run_all.sh    regenerates every dump
-tool/ground_truth/out/*.json    committed reference dumps
-test/fixtures/                  DragonBones assets used by both sides
-packages/dragonbones/           pure Dart runtime (no deps, no Flutter)
-packages/dragonbones_flutter/   Canvas renderer: update() + render(), sprites + meshes
-example/                        minimal Flutter app (dragon / mecha / 龙)
-doc/FINDINGS.md                 investigation notes + evidence
+tool/ground_truth/dump.js            headless oracle: official runtime -> JSON
+tool/ground_truth/fetch_runtime.sh   fetches + compiles the official TS runtime
+tool/ground_truth/fetch_fixtures.sh  fetches the Unity SDK demo assets
+tool/ground_truth/run_all.sh         regenerates every dump
+tool/ground_truth/out/*.json         committed reference dumps (the whole sweep)
+test/fixtures/                       hand-picked assets used by both sides
+test/fixtures/unity/                 Unity SDK sweep (JSON committed, PNGs not)
+packages/dragonbones/                pure Dart runtime (no deps, no Flutter)
+packages/dragonbones_flutter/        Canvas renderer: update() + render()
+example/                             minimal Flutter app (dragon / mecha / 龙)
+doc/FINDINGS.md                      investigation notes + evidence
 ```
 
 ## Licence

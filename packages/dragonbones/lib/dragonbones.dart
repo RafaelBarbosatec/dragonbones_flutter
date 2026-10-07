@@ -42,6 +42,7 @@ part 'src/model/texture_atlas_data.dart';
 part 'src/parser/object_data_parser.dart';
 part 'src/armature/transform_object.dart';
 part 'src/armature/bone.dart';
+part 'src/armature/constraint.dart';
 part 'src/armature/slot.dart';
 part 'src/armature/armature.dart';
 part 'src/animation/base_timeline_state.dart';

@@ -16,14 +16,47 @@ abstract class IArmatureProxy {
 
 /// @private
 ///
-/// Base class for runtime constraints. Milestone 1 has no constraints, so only
-/// the members referenced by [Bone] / [Armature] are declared.
+/// Base class for runtime constraints.
+///
+/// Faithful port of the upstream `Constraint` base: it only carries the state
+/// the concrete constraints share. [IKConstraint] is the only one implemented —
+/// `PathConstraint` is not ported, because no supported fixture uses it.
 abstract class Constraint extends BaseObject {
+  /// @internal
+  ConstraintData? _constraintData;
+
+  /// @internal
+  Armature? _armature;
+
+  /// @internal
+  Bone? _target;
+
   /// @internal
   Bone? _root;
 
   /// @internal
+  Bone? _bone;
+
+  @override
+  void _onClear() {
+    this._constraintData = null;
+    this._armature = null;
+    this._target = null;
+    this._root = null;
+    this._bone = null;
+  }
+
+  /// @internal
+  void init(ConstraintData constraintData, Armature armature);
+
+  /// @internal
   void update();
+
+  /// @internal
+  void invalidUpdate();
+
+  /// The name from the constraint data.
+  String get name => this._constraintData!.name;
 }
 
 /// - Armature is the core of the skeleton animation system.

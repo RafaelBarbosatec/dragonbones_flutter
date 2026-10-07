@@ -258,3 +258,66 @@ targets: `Dragon` ×5 (sprites), `龙` (60 bones, 5 meshes — 2 skinned — wit
 animated FFD), `mecha_1004d` (nested armatures). `mecha` peaks at 5.2e-5 rather
 than 5e-7 purely because composing two matrices per child slot compounds the
 reference dumps' own rounding.
+
+---
+
+## 9. Scaling to the whole Unity SDK demo set
+
+The bar for "done" was: run every demo asset the DragonBones Unity SDK ships. That
+is 44 assets under `Assets/DragonBones/Demos/Resources` — covering nested
+armatures, skinned meshes, FFD, active IK, and skin swapping — on top of the three
+hand-picked fixtures.
+
+Rather than hand-write a manifest, the sweep is discovered: `dump.js` takes an
+`auto` animation (`animationNames[0]`) and an id, `run_all.sh` globs
+`test/fixtures/unity/**/*_ske.json`, and the Dart checker globs the dumps in
+`out/`. Adding an asset means re-running the fetch script, nothing else.
+
+Result on the first full run: **44 clean, 7 failing.** The failures were all real,
+and all one cause.
+
+### 9.1 IK constraints were never built
+
+`mecha_1406`, `skin_1502b` and three `you_xin` assets disagreed only on bones in
+leg/arm chains (`thigh_1_l`, `calf_r`, …). Every failing asset had an `ik` entry in
+its armature; `mecha_2903`, which passed, had none.
+
+The port had `_buildConstraints` deliberately empty, so no constraint was ever
+instantiated. `龙` passed *by accident*: its two IK constraints carry
+`weight: 0`, which makes them inert. The failing assets omit `weight`, and the
+parser defaults it to `1.0` — active. So the port's own fixture set had hidden the
+gap behind an IK that happened to be switched off.
+
+Worth noting for anyone reading the plumbing: **nothing in `Armature` calls
+`constraint.update()`**. It is driven from `Bone.update`, which walks the
+armature's constraint list and updates the ones rooted at the bone it is updating.
+The port already had that call, plus `updateByConstraint()` / `invalidUpdate()` —
+only the concrete class and `_buildConstraints` were missing.
+
+Ported `IKConstraint` verbatim (`_computeA` for single-bone, `_computeB` for the
+two-bone triangle solve), plus the `Constraint` base's shared state. That took the
+sweep from 44/51 to **51/51**.
+
+### 9.2 Final numbers
+
+```
+757701 numeric comparisons over 51 assets (51 clean, 0 failing)
+74245 mesh values, 1228 nested-armature slots
+RESULT: PASS
+```
+
+Everything that does not need an unported feature matches the official runtime to
+~5e-7, which is the dumps' own rounding precision. The spread of what that covers:
+101-frame animations, 70-bone skeletons, 96-slot armatures, 47k mesh values in a
+single asset, and 606 nested child slots in one.
+
+### 9.3 What the sweep deliberately does not prove
+
+- **Appearance.** A runner has no GPU. The Flutter tests rasterise and count
+  painted pixels, which catches "wired wrong, drew nothing" — not "looks wrong".
+- **Unported features.** `PathConstraint`, `Surface` bones, `EventObject` actions,
+  `SlotZIndex` / `SlotAlpha` timelines. No asset in this set needs them, so their
+  absence is invisible here; it would not be for a project that does.
+
+Keeping those two sentences next to the green numbers is the difference between a
+verification and a claim.

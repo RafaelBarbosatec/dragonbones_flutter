@@ -31,8 +31,10 @@ jobs:
 
   # The runtime is pure Dart with zero dependencies, so it is analysed and
   # tested without Flutter. The oracle diff is the real test: it replays the
-  # fixture frame by frame and compares every bone matrix and every slot's draw
-  # data against the official runtime. No GPU, no eyeballing.
+  # hand-picked ladder AND all 44 Unity SDK demo assets frame by frame,
+  # comparing every bone matrix, every slot's draw data, every mesh's posed
+  # vertices and every flattened nested-armature slot against the official
+  # runtime. No GPU, no eyeballing.
   runtime:
     name: dragonbones (pure Dart)
     runs-on: ubuntu-latest
