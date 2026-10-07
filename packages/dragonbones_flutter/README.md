@@ -140,3 +140,8 @@ The full list, including what is verified and how, is on the documentation site:
 **[Limitations](https://docs.page/RafaelBarbosatec/dragonbones_flutter/limitations)**
 and
 **[Architecture & verification](https://docs.page/RafaelBarbosatec/dragonbones_flutter/architecture)**.
+
+## Licence
+
+MIT. The DragonBones runtime and format are MIT (© DragonBones team and
+contributors).
