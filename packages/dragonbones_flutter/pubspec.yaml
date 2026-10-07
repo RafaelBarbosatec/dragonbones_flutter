@@ -12,7 +12,6 @@ topics:
   - skeletal-animation
   - gamedev
   - canvas
-publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -21,8 +20,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dragonbones:
-    path: ../dragonbones
+  dragonbones: ^0.1.0
 
 dev_dependencies:
   flutter_test:

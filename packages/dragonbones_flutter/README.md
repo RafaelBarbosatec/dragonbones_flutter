@@ -1,14 +1,16 @@
 # dragonbones_flutter
 
+[![pub package](https://img.shields.io/pub/v/dragonbones_flutter.svg)](https://pub.dev/packages/dragonbones_flutter)
+
 Draw [DragonBones](https://github.com/DragonBones/DragonBones) skeletal
 animations on a Flutter `Canvas` — the free, MIT alternative to Spine and Rive.
 
 The runtime lives in [`dragonbones`](https://pub.dev/packages/dragonbones) (pure
 Dart, zero dependencies). This package is **only the renderer**.
 
-> Not on pub.dev yet. Depend on it by git for now — see
-> [Installing](#installing). Full docs:
-> <https://docs.page/RafaelBarbosatec/dragonbones_flutter>.
+> Available on pub.dev as
+> [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter). Full
+> docs: <https://docs.page/RafaelBarbosatec/dragonbones_flutter>.
 
 ## It is not coupled to any engine
 
@@ -36,11 +38,11 @@ which is also why every number it draws can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter:
-    git:
-      url: https://github.com/RafaelBarbosatec/dragonbones_flutter
-      path: packages/dragonbones_flutter
+  dragonbones_flutter: ^0.1.0
 ```
+
+This pulls in [`dragonbones`](https://pub.dev/packages/dragonbones), the runtime,
+as a transitive dependency — you do not add it yourself.
 
 ## Usage
 

@@ -8,11 +8,11 @@ Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
 exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
 > **Status: 0.1.0 — feature-complete for the common case, not for everything.**
-> Neither package is on pub.dev, deliberately. The runtime's publish dry-run is
-> clean; the renderer cannot even be dry-run until the runtime ships, because
-> `pub publish` rejects its `path:` dependency. See
-> [Limitations](#limitations) for exactly what is missing — it is a short,
-> specific list, not a vague disclaimer.
+> Both packages are published on pub.dev:
+> [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
+> [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
+> renderer). See [Limitations](#limitations) for exactly what is missing — it is
+> a short, specific list, not a vague disclaimer.
 
 ## The premise
 
@@ -65,15 +65,9 @@ That is also why the geometry can be verified without a GPU.
 
 ## Quick start
 
-Not on pub.dev yet (see [Publishing](#publishing)). For now, depend on it by
-path or by git:
-
 ```yaml
 dependencies:
-  dragonbones_flutter:
-    git:
-      url: https://github.com/RafaelBarbosatec/dragonbones_flutter
-      path: packages/dragonbones_flutter
+  dragonbones_flutter: ^0.1.0
 ```
 
 ```dart
@@ -318,21 +312,19 @@ and names out of the texture JSON and never opens the PNGs, so the 11 MB of
 images stay out of the repository. `--with-images` grabs them when you want
 pixels.
 
-## Publishing
+## Releases
 
-Both pubspecs carry `publish_to: none`. That is **deliberate**: a pub.dev release
-cannot be deleted, only retracted, so the trigger is a human decision, not a CI
-side effect. The current state:
+Both packages are published on pub.dev at `0.1.0`:
 
-| Package | `--dry-run` | Version |
-| --- | --- | --- |
-| `dragonbones` | clean — verified locally, gated in CI | 0.1.0 |
-| `dragonbones_flutter` | cannot pass yet, **by design** — `pub publish` rejects its `path:` dependency on `dragonbones` until the runtime is on pub.dev | 0.1.0 |
+| Package | pub.dev |
+| --- | --- |
+| `dragonbones` | <https://pub.dev/packages/dragonbones> |
+| `dragonbones_flutter` | <https://pub.dev/packages/dragonbones_flutter> |
 
-[Publishing](https://docs.page/RafaelBarbosatec/dragonbones_flutter/publishing)
-has the exact sequence and the reason for the order — the runtime must go out
-first, because the renderer depends on it by `path:` and that has to become a
-version constraint.
+A pub.dev release cannot be deleted, only retracted, so publishing stays a human
+decision rather than a CI side effect. The release sequence — the runtime first,
+because the renderer depends on it — is documented in
+[Publishing](https://docs.page/RafaelBarbosatec/dragonbones_flutter/publishing).
 
 ## Licence
 

@@ -9,8 +9,8 @@
     "github": "RafaelBarbosatec/dragonbones_flutter"
   },
   "banner": {
-    "message": "v0.1.0 — publishable, not yet published on pub.dev. Depend by git for now.",
-    "href": "/publishing"
+    "message": "v0.1.0 is out on pub.dev.",
+    "href": "https://pub.dev/packages/dragonbones_flutter"
   },
   "anchors": [
     {

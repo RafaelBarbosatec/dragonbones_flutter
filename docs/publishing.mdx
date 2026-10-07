@@ -3,9 +3,16 @@ title: Publishing
 description: The exact release sequence for the two packages, and why the runtime has to go out first.
 ---
 
-Both packages are **not** published, and the pubspecs carry `publish_to: none` on
-purpose. Nothing goes to pub.dev until someone removes that line deliberately,
-because a pub.dev release cannot be deleted — only retracted.
+Both packages are published on pub.dev:
+
+| Package | Version |
+| --- | --- |
+| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.1.0 |
+| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.1.0 |
+
+A pub.dev release cannot be deleted — only retracted — so the trigger is always a
+human decision, never a CI side effect. This page is the release sequence for the
+next version.
 
 Check the current state at any time:
 
@@ -24,37 +31,22 @@ cd packages/dragonbones_flutter  && flutter pub publish --dry-run
 
 ## Why the order matters
 
-`dragonbones_flutter` depends on `dragonbones` through a **path** dependency:
+`dragonbones_flutter` depends on `dragonbones` through a **version range**:
 
 ```yaml
 dependencies:
-  dragonbones:
-    path: ../dragonbones
+  dragonbones: ^0.1.0
 ```
 
-That works inside this repository and **must** change before publishing — a
-published package cannot depend on a path. So `dragonbones` has to go out first,
-and only then can the renderer point at a version range. Doing it the other way
-around leaves a window where CI is red for no reason, which is why it is not done
-in advance.
-
-This is not a theory: a dry-run of the renderer today fails outright with
-
-```text
-Package validation found the following error:
-* Don't depend on "dragonbones" from the path source. Use the hosted source instead.
-Sorry, your package is missing a requirement and can't be published yet.
-```
-
-so the renderer simply cannot be published before the runtime. CI dry-runs the
-**runtime only** and deliberately leaves the renderer alone, because a check that
-can never pass until release day is noise, not a gate.
+That is exactly why the runtime has to go out first: until the new `dragonbones`
+version is on pub.dev, pub cannot resolve the renderer's dependency. Publish the
+runtime, let the pub.dev index catch up, then publish the renderer.
 
 <Warning>
   A consequence worth planning for: there is a window between step 1 and step 2
   where the runtime is public and the renderer is not. If the runtime goes out
   with a bug, it is public (retractable, not deletable). Dry-run the renderer
-  locally with the path swapped to `^0.1.0` *after* step 1, before running step 2.
+  locally with the new range *after* step 1, before running step 2.
 </Warning>
 
 ## Steps
@@ -62,20 +54,16 @@ can never pass until release day is noise, not a gate.
 ```bash
 # 1. runtime first
 cd packages/dragonbones
-#    - version is already 0.1.0
-#    - delete the `publish_to: none` line
+#    - bump `version:` in pubspec.yaml
+#    - add the new version to CHANGELOG.md
 dart pub publish --dry-run     # must be clean before the real thing
 dart pub publish               # <- irreversible
 
 # 2. then the renderer
 cd ../dragonbones_flutter
-#    - version is already 0.1.0
-#    - delete the `publish_to: none` line
-#    - replace the path dependency:
-#         dragonbones:
-#           path: ../dragonbones
-#      with:
-#         dragonbones: ^0.1.0
+#    - bump `version:` and add it to CHANGELOG.md
+#    - raise the dependency on the new runtime:
+#         dragonbones: ^0.2.0
 flutter pub get && flutter test
 flutter pub publish --dry-run
 flutter pub publish
@@ -88,17 +76,17 @@ flutter pub publish
 | `LICENSE` in the package root | ✅ | ✅ |
 | `CHANGELOG.md` | ✅ | ✅ |
 | `README.md` | ✅ | ✅ |
-| Version at `0.1.0` | ✅ | ✅ |
-| No `path:` dependency | ✅ (no dependencies at all) | ⬜ becomes `^0.1.0` in step 2 |
-| `publish_to: none` removed | ⬜ on publish | ⬜ on publish |
-| `--dry-run` clean | ✅ gated in CI | ⛔ **cannot pass before step 1** (path dependency) |
+| Version bumped for the release | ⬜ per release | ⬜ per release |
+| No `path:` dependency | ✅ (no dependencies at all) | ✅ `dragonbones: ^0.1.0` |
+| `publish_to: none` removed | ✅ | ✅ |
+| `--dry-run` clean | ✅ gated in CI | ✅ |
 
 ## Name availability
 
-Checked 2026-10 and free on pub.dev: `dragonbones`, `dragonbones_flutter`,
-`dragonbones_dart` and `dragonbones_canvas`. If `dragonbones` is taken by the
-time you publish, a suffix is the sane fallback — the runtime and the renderer
-can be named independently.
+`dragonbones` and `dragonbones_flutter` are the names this project publishes
+under. `dragonbones_dart` and `dragonbones_canvas` were also free when last
+checked and remain reasonable fallbacks — the runtime and the renderer can be
+named independently.
 
 ## What is deliberately not in the archive
 

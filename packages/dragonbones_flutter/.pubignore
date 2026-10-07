@@ -1,0 +1,4 @@
+# Tests and their fixtures are for developing this package against the
+# repository's reference material. They are not useful to consumers of the
+# published renderer, so they stay in the repository and out of the archive.
+test/

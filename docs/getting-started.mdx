@@ -7,15 +7,13 @@ From nothing to an animated character on a Flutter `Canvas`.
 
 ## 1. Depend on it
 
-Not on pub.dev yet — use git or a path:
-
 ```yaml
 dependencies:
-  dragonbones_flutter:
-    git:
-      url: https://github.com/RafaelBarbosatec/dragonbones_flutter
-      path: packages/dragonbones_flutter
+  dragonbones_flutter: ^0.1.0
 ```
+
+This brings in [`dragonbones`](https://pub.dev/packages/dragonbones), the
+runtime, transitively — you only add the renderer.
 
 `dragonbones_flutter` re-exports the whole runtime, so you only need this one
 import:
