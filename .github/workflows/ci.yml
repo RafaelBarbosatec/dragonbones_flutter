@@ -88,32 +88,28 @@ jobs:
           flutter pub get
           flutter analyze
 
-  # Keeps the "publishable" claim honest. `publish_to: none` stays in place, so
-  # nothing is ever uploaded — but a package that would fail `pub publish` should
-  # fail CI instead of failing on release day.
+  # Keeps the "publishable" claim honest for the runtime. `publish_to: none` stays
+  # in place, so nothing is ever uploaded — but a package that would fail
+  # `pub publish` should fail CI instead of failing on release day.
+  #
+  # The renderer is deliberately NOT dry-run here. It depends on `dragonbones`
+  # through a `path:`, and `pub publish` rejects path dependencies outright
+  # ("Don't depend on ... from the path source"). That failure is expected and is
+  # precisely why the runtime has to be released first — see docs/publishing.mdx.
+  # Everything else about the renderer's archive is covered by the renderer job.
   publishable:
-    name: publish dry-run (not publishing)
+    name: publish dry-run (runtime)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/dragonbones
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: '3.11.0'
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.41.2'
-          channel: stable
-          cache: true
-      - name: dragonbones
-        working-directory: packages/dragonbones
-        run: |
-          dart pub get
-          dart pub publish --dry-run
-      - name: dragonbones_flutter
-        working-directory: packages/dragonbones_flutter
-        run: |
-          flutter pub get
-          flutter pub publish --dry-run
+      - run: dart pub get
+      - run: dart pub publish --dry-run
 
   # The documentation site is generated from docs/ by docs.page, so broken
   # frontmatter, a dead internal link or an MDX file that will not render should

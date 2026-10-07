@@ -328,8 +328,8 @@ side effect. The current state:
 
 | Package | `--dry-run` | Version |
 | --- | --- | --- |
-| `dragonbones` | clean (verified locally, gated in CI) | 0.1.0 |
-| `dragonbones_flutter` | gated in CI | 0.1.0 |
+| `dragonbones` | clean — verified locally, gated in CI | 0.1.0 |
+| `dragonbones_flutter` | cannot pass yet, **by design** — `pub publish` rejects its `path:` dependency on `dragonbones` until the runtime is on pub.dev | 0.1.0 |
 
 [Publishing](https://docs.page/RafaelBarbosatec/dragonbones_flutter/publishing)
 has the exact sequence and the reason for the order — the runtime must go out

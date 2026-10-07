@@ -38,6 +38,25 @@ and only then can the renderer point at a version range. Doing it the other way
 around leaves a window where CI is red for no reason, which is why it is not done
 in advance.
 
+This is not a theory: a dry-run of the renderer today fails outright with
+
+```text
+Package validation found the following error:
+* Don't depend on "dragonbones" from the path source. Use the hosted source instead.
+Sorry, your package is missing a requirement and can't be published yet.
+```
+
+so the renderer simply cannot be published before the runtime. CI dry-runs the
+**runtime only** and deliberately leaves the renderer alone, because a check that
+can never pass until release day is noise, not a gate.
+
+<Warning>
+  A consequence worth planning for: there is a window between step 1 and step 2
+  where the runtime is public and the renderer is not. If the runtime goes out
+  with a bug, it is public (retractable, not deletable). Dry-run the renderer
+  locally with the path swapped to `^0.1.0` *after* step 1, before running step 2.
+</Warning>
+
 ## Steps
 
 ```bash
@@ -72,7 +91,7 @@ flutter pub publish
 | Version at `0.1.0` | ✅ | ✅ |
 | No `path:` dependency | ✅ (no dependencies at all) | ⬜ becomes `^0.1.0` in step 2 |
 | `publish_to: none` removed | ⬜ on publish | ⬜ on publish |
-| `--dry-run` clean | ✅ gated in CI | ✅ gated in CI |
+| `--dry-run` clean | ✅ gated in CI | ⛔ **cannot pass before step 1** (path dependency) |
 
 ## Name availability
 
