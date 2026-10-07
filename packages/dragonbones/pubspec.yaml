@@ -1,6 +1,6 @@
 name: dragonbones
 description: 'Pure-Dart runtime for the DragonBones 5.x skeletal animation format: parses DragonBones Pro exports and evaluates armature, bone, mesh and IK timelines. Zero dependencies.'
-version: 0.1.1
+version: 0.2.0
 repository: https://github.com/RafaelBarbosatec/dragonbones_flutter
 documentation: https://docs.page/RafaelBarbosatec/dragonbones_flutter
 issue_tracker: https://github.com/RafaelBarbosatec/dragonbones_flutter/issues

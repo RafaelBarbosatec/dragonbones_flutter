@@ -464,7 +464,18 @@ class AnimationState extends BaseObject {
     if (this._subFadeState < 0) {
       // Fade start event.
       this._subFadeState = 0;
-      // Fade events are not dispatched by this port.
+
+      final bool eventActive = this._parent == null && this.actionEnabled;
+      if (eventActive) {
+        final eventType = isFadeOut ? EventObject.FADE_OUT : EventObject.FADE_IN;
+        if (this._armature!.eventDispatcher.hasDBEventListener(eventType)) {
+          final eventObject = EventObject();
+          eventObject.type = eventType;
+          eventObject.armature = this._armature;
+          eventObject.animationState = this;
+          this._armature!._dragonBones!.bufferEvent(eventObject);
+        }
+      }
     }
 
     if (passedTime < 0.0) {
@@ -493,7 +504,17 @@ class AnimationState extends BaseObject {
         this._fadeState = 0;
       }
 
-      // Fade complete events are not dispatched by this port.
+      final bool eventActive = this._parent == null && this.actionEnabled;
+      if (eventActive) {
+        final eventType = isFadeOut ? EventObject.FADE_OUT_COMPLETE : EventObject.FADE_IN_COMPLETE;
+        if (this._armature!.eventDispatcher.hasDBEventListener(eventType)) {
+          final eventObject = EventObject();
+          eventObject.type = eventType;
+          eventObject.armature = this._armature;
+          eventObject.animationState = this;
+          this._armature!._dragonBones!.bufferEvent(eventObject);
+        }
+      }
     }
   }
 

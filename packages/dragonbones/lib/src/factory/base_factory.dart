@@ -287,13 +287,19 @@ abstract class BaseFactory {
             final actions = armatureDisplayData.actions.isNotEmpty
                 ? armatureDisplayData.actions
                 : childArmature.armatureData.defaultActions;
-            if (actions.isEmpty) {
+            if (actions.isNotEmpty) {
+              // `defaultActions` finally do something: an armature that brought
+              // its own start-up animation (`{"gotoAndPlay": ...}`) plays it
+              // once the parent has settled.
+              for (final action in actions) {
+                final eventObject = EventObject();
+                EventObject.actionDataToInstance(action, eventObject, slot.armature);
+                eventObject.slot = slot;
+                slot.armature._bufferAction(eventObject, false);
+              }
+            } else {
               childArmature.animation.play();
             }
-            // else: upstream buffers each action as an EventObject. EventObject
-            // is not ported, so those actions are dropped. Nothing in the
-            // supported fixtures takes this branch (their nested armatures all
-            // inherit the parent's animation).
           }
 
           armatureDisplayData.armature = childArmature.armatureData;

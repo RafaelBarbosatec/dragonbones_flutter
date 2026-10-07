@@ -192,7 +192,6 @@ rather than crash loudly. That is the dangerous kind, so it is spelled out.
 
 | Feature | Status | What breaks |
 | --- | --- | --- |
-| **Animation events** (`EventObject`) | not ported | No `loopComplete` / `complete` / frame events. You cannot drive damage, sounds or projectiles from the animation. Callbacks fire nowhere. |
 | **IK constraint timelines** (`IKConstraintTimelineState`) | not ported | **Static** IK is applied and verified. **Animated** IK weight/bend is ignored — a rig that animates its IK targets will drift. `_updateTimelines()` is a no-op. |
 | **Path constraints** (`PathConstraint`) | data parsed, never built | Bones meant to follow a path do not. |
 | **`Surface` bones** (`SurfaceTimelineState`) | model only | `SurfaceData`/`Surface` exist; the timeline is never created, so surfaces do not deform. |
@@ -232,9 +231,10 @@ Ordered by what a real game project would hit first.
 
 **Before 1.0 — the gaps that bite**
 
-- [ ] **`EventObject` / animation events.** The highest-value missing piece: it
-      is what turns an animation from decoration into gameplay. Needs the event
-      dispatcher, `bufferEvent`, and the action/loop/complete/fade hooks.
+- [x] **`EventObject` / animation events.** Done in 0.2.0: frame and sound events,
+      the `start` / `loopComplete` / `complete` / `fade*` hooks, `gotoAndPlay`
+      actions, and child-armature propagation — verified against the official
+      runtime as an event sequence (47 fixtures, 174 scenarios, 1,919 events).
 - [ ] **`IKConstraintTimelineState`.** Static IK is verified; animated IK is not.
       Until this lands, a rig that animates IK weight is silently wrong.
 - [ ] **`SlotZIndex` timeline.** Draw order is a correctness issue, not a polish

@@ -79,6 +79,10 @@ values in a single asset.
 - **animation**: `WorldClock`, `Animation`, `AnimationState` and the timeline
   states — bone all/translate/rotate/scale, slot display/colour, action, z-order,
   and **deform (FFD)**
+- **events**: `EventObject` and `IEventDispatcher` — frame events and sound
+  events placed on the timeline, the `start` / `loopComplete` / `complete` /
+  `fadeIn` / `fadeOut` lifecycle events, and `gotoAndPlay` actions, all
+  dispatched (buffered) after the frame is posed
 - **render**: `Armature.buildDrawList()`, which flattens nested child armatures
   and emits the complete per-slot geometry a renderer needs
 
@@ -87,9 +91,6 @@ values in a single asset.
 Each of these is *parsed* but not *evaluated*, so a file using it will load and
 mostly animate, then be subtly wrong rather than fail loudly.
 
-- **Animation events** (`EventObject`) — the dispatcher and the action/loop/
-  complete/fade hooks are not ported. You cannot drive gameplay from an
-  animation yet.
 - **IK constraint timelines** (`IKConstraintTimelineState`) — **static** IK is
   applied (and verified). **Animated** IK weight/bend is ignored.
 - **Path constraints** (`PathConstraint`) — data parsed, never built.

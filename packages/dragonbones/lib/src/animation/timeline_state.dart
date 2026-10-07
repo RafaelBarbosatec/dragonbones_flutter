@@ -3,14 +3,58 @@ part of '../../dragonbones.dart';
 /// @internal
 ///
 /// Faithful port of `.ref/dragonBones-ts/animation/TimelineState.ts`.
-/// Action/event dispatch is elided (the milestone-1 fixtures have no actions);
-/// the playhead (`_setCurrentTime`) path is transcribed verbatim.
+/// The playhead (`_setCurrentTime`) path is transcribed verbatim.
 
 /// @internal
 class ActionTimelineState extends TimelineState {
+  /// - Fires every action the playhead just crossed.
+  ///
+  /// Three kinds arrive here, and they are dispatched differently on purpose:
+  ///
+  /// - `Play` (a `gotoAndPlay` from the editor) is *not* dispatched to
+  ///   listeners. It is queued on the armature ([Armature._bufferAction]) and
+  ///   runs after the pose is settled, because it starts another animation.
+  /// - `Frame` becomes a [EventObject.FRAME_EVENT] — but only when a listener
+  ///   exists, so an app that listens to nothing pays nothing.
+  /// - `Sound` becomes a [EventObject.SOUND_EVENT], and is buffered whether or
+  ///   not anyone listens: sound is global, and the app-level dispatcher
+  ///   (`DragonBones.eventManager`) is not known here.
   void _onCrossFrame(int frameIndex) {
-    // Action event dispatch (EventObject) is not ported: the milestone-1
-    // fixtures declare no animation actions.
+    final eventDispatcher = this._armature!.eventDispatcher;
+
+    if (this._animationState!.actionEnabled) {
+      final int frameOffset = this._animationData!.frameOffset +
+          (this._timelineArray![
+              (this._timelineData as TimelineData).offset + BinaryOffset.TimelineFrameOffset + frameIndex] as int);
+      final int actionCount = this._frameArray![frameOffset + 1] as int;
+      // May be the animation data does not belong to this armature data.
+      final actions = this._animationData!.parent!.actions;
+
+      for (var i = 0; i < actionCount; ++i) {
+        final int actionIndex = this._frameArray![frameOffset + 2 + i] as int;
+        final action = actions[actionIndex];
+
+        if (action.type == ActionType.Play) {
+          final eventObject = EventObject();
+          // `frameArray[frameOffset] / frameRate` rather than
+          // `* frameRateR`: upstream comments that the latter loses precision.
+          eventObject.time = (this._frameArray![frameOffset] as num).toDouble() / this._frameRate;
+          eventObject.animationState = this._animationState;
+          EventObject.actionDataToInstance(action, eventObject, this._armature!);
+          this._armature!._bufferAction(eventObject, true);
+        } else {
+          final eventType = action.type == ActionType.Frame ? EventObject.FRAME_EVENT : EventObject.SOUND_EVENT;
+
+          if (action.type == ActionType.Sound || eventDispatcher.hasDBEventListener(eventType)) {
+            final eventObject = EventObject();
+            eventObject.time = (this._frameArray![frameOffset] as num).toDouble() / this._frameRate;
+            eventObject.animationState = this._animationState;
+            EventObject.actionDataToInstance(action, eventObject, this._armature!);
+            this._armature!._dragonBones!.bufferEvent(eventObject);
+          }
+        }
+      }
+    }
   }
 
   @override
@@ -34,16 +78,39 @@ class ActionTimelineState extends TimelineState {
             // Reset zorder to pose.
             this._armature!._sortZOrder(null, 0);
           }
+
+          if (eventActive && eventDispatcher.hasDBEventListener(EventObject.START)) {
+            final eventObject = EventObject();
+            eventObject.type = EventObject.START;
+            eventObject.armature = this._armature;
+            eventObject.animationState = this._animationState;
+            this._armature!._dragonBones!.bufferEvent(eventObject);
+          }
         } else {
           return;
         }
       }
 
       final bool isReverse = this._animationState!.timeScale < 0.0;
+      EventObject? loopCompleteEvent;
+      EventObject? completeEvent;
 
       if (eventActive && this.currentPlayTimes != prevPlayTimes) {
-        // Loop/complete events are not dispatched by this port.
-        eventDispatcher.hasDBEventListener('loopComplete');
+        if (eventDispatcher.hasDBEventListener(EventObject.LOOP_COMPLETE)) {
+          loopCompleteEvent = EventObject();
+          loopCompleteEvent.type = EventObject.LOOP_COMPLETE;
+          loopCompleteEvent.armature = this._armature;
+          loopCompleteEvent.animationState = this._animationState;
+        }
+
+        if (this.playState > 0) {
+          if (eventDispatcher.hasDBEventListener(EventObject.COMPLETE)) {
+            completeEvent = EventObject();
+            completeEvent.type = EventObject.COMPLETE;
+            completeEvent.armature = this._armature;
+            completeEvent.animationState = this._animationState;
+          }
+        }
       }
 
       if (this._frameCount > 1) {
@@ -83,6 +150,12 @@ class ActionTimelineState extends TimelineState {
 
                 if (this._position <= framePosition && framePosition <= this._position + this._duration) {
                   this._onCrossFrame(crossedFrameIndex);
+                }
+
+                if (loopCompleteEvent != null && crossedFrameIndex == 0) {
+                  // Add loop complete event after first frame.
+                  this._armature!._dragonBones!.bufferEvent(loopCompleteEvent);
+                  loopCompleteEvent = null;
                 }
 
                 if (crossedFrameIndex > 0) {
@@ -136,6 +209,12 @@ class ActionTimelineState extends TimelineState {
                   this._onCrossFrame(crossedFrameIndex);
                 }
 
+                if (loopCompleteEvent != null && crossedFrameIndex == 0) {
+                  // Add loop complete event before first frame.
+                  this._armature!._dragonBones!.bufferEvent(loopCompleteEvent);
+                  loopCompleteEvent = null;
+                }
+
                 if (crossedFrameIndex == frameIndex) {
                   break;
                 }
@@ -158,9 +237,25 @@ class ActionTimelineState extends TimelineState {
             }
           } else if (this._position <= framePosition) {
             // Loop complete.
+            if (!isReverse && loopCompleteEvent != null) {
+              // Add loop complete event before first frame.
+              this._armature!._dragonBones!.bufferEvent(loopCompleteEvent);
+              loopCompleteEvent = null;
+            }
+
             this._onCrossFrame(this._frameIndex);
           }
         }
+      }
+
+      // Whatever the playhead did not cross — or could not cross, because the
+      // timeline has a single frame — is dispatched at the end of the update.
+      if (loopCompleteEvent != null) {
+        this._armature!._dragonBones!.bufferEvent(loopCompleteEvent);
+      }
+
+      if (completeEvent != null) {
+        this._armature!._dragonBones!.bufferEvent(completeEvent);
       }
     }
   }

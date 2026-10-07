@@ -311,8 +311,26 @@ class Animation extends BaseObject {
       this._animationStates.add(animationState);
     }
 
-    // Milestone 2: child-armature same-name propagation and blend animation
-    // nodes (animationData.animationTimelines) are not ported.
+    // Child armature play same name animation.
+    //
+    // Tapping an animation on the parent makes every nested armature that *has*
+    // an animation of that name play it too — that is how one call switches a
+    // whole character (a body plus its equipment, a mecha plus its weapons) into
+    // the same pose. The `getState(...) == null` guard keeps a child that is
+    // already playing that animation from being restarted.
+    for (final slot in this._armature!.getSlots()) {
+      final childArmature = slot.childArmature;
+
+      if (childArmature != null &&
+          childArmature.inheritAnimation &&
+          childArmature.animation.hasAnimation(animationName) &&
+          childArmature.animation.getState(animationName) == null) {
+        childArmature.animation.fadeIn(animationName);
+      }
+    }
+
+    // Still not ported: blend animation nodes (`animationData.animationTimelines`),
+    // i.e. AnimationBlendType.E1D. No fixture declares one — see `Limitations`.
 
     this._lastAnimationState = animationState;
 

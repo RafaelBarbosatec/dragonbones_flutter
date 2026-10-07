@@ -3,13 +3,14 @@ part of '../../dragonbones.dart';
 /// - An interface that the engine binding implements so the armature can
 /// communicate with the display container.
 ///
-/// Port of `.ref/dragonBones-ts/armature/IArmatureProxy.ts` (trimmed to what
-/// milestone 1 needs).
-abstract class IArmatureProxy {
+/// Port of `.ref/dragonBones-ts/armature/IArmatureProxy.ts`. Upstream's version
+/// `extends IEventDispatcher`, and so does this one: event delivery is the
+/// binding's job, because only the binding knows how an event reaches the
+/// application (a widget callback, a stream, a queue).
+abstract class IArmatureProxy implements IEventDispatcher {
   void dbInit(Armature armature);
   void dbClear();
   void dbUpdate();
-  bool hasDBEventListener(String type);
   Armature get armature;
   Animation get animation;
 }
@@ -115,6 +116,13 @@ class Armature extends BaseObject implements IAnimatable {
   Object? _replacedTexture;
 
   /// @internal
+  ///
+  /// Actions collected during the frame that need to run *after* the pose is
+  /// settled: `gotoAndPlay` targets for nested armatures, from a slot's display
+  /// data. Flushed at the end of [advanceTime].
+  final List<EventObject> _actions = <EventObject>[];
+
+  /// @internal
   DragonBones? _dragonBones;
 
   WorldClock? _clock;
@@ -138,6 +146,10 @@ class Armature extends BaseObject implements IAnimatable {
 
     for (final constraint in this._constraints) {
       constraint.returnToPool();
+    }
+
+    for (final action in this._actions) {
+      action.returnToPool();
     }
 
     if (this._animation != null) {
@@ -168,6 +180,7 @@ class Armature extends BaseObject implements IAnimatable {
     this._bones.length = 0;
     this._slots.length = 0;
     this._constraints.length = 0;
+    this._actions.length = 0;
     this._armatureData = null;
     this._animation = null;
     this._proxy = null;
@@ -308,8 +321,65 @@ class Armature extends BaseObject implements IAnimatable {
       }
     }
 
+    // Do actions.
+    //
+    // A `Play` action is a `gotoAndPlay` the animator set on a slot's display
+    // data. It runs *after* the pose, and it is the only thing that can start a
+    // nested armature playing, so it has to happen here rather than where the
+    // slot swaps its display.
+    if (this._actions.isNotEmpty) {
+      for (final action in this._actions) {
+        final actionData = action.actionData;
+
+        if (actionData != null) {
+          if (actionData.type == ActionType.Play) {
+            if (action.slot != null) {
+              final childArmature = action.slot!.childArmature;
+
+              if (childArmature != null) {
+                childArmature.animation.fadeIn(actionData.name);
+              }
+            } else if (action.bone != null) {
+              for (final slot in this.getSlots()) {
+                if (slot.parent == action.bone) {
+                  final childArmature = slot.childArmature;
+
+                  if (childArmature != null) {
+                    childArmature.animation.fadeIn(actionData.name);
+                  }
+                }
+              }
+            } else {
+              this._animation!.fadeIn(actionData.name);
+            }
+          }
+        }
+
+        action.returnToPool();
+      }
+
+      this._actions.clear();
+    }
+
     this._lockUpdate = false;
     this._proxy!.dbUpdate();
+  }
+
+  /// @internal
+  ///
+  /// Faithful port of upstream `Armature._bufferAction`.
+  ///
+  /// [append] picks the end of the queue (frame events, so they fire in
+  /// timeline order) or the front (a nested armature starting up, so its own
+  /// actions run first).
+  void _bufferAction(EventObject action, bool append) {
+    if (!this._actions.contains(action)) {
+      if (append) {
+        this._actions.add(action);
+      } else {
+        this._actions.insert(0, action);
+      }
+    }
   }
 
   /// - Forces a specific bone or its owning slot to update next frame.
@@ -436,6 +506,13 @@ class Armature extends BaseObject implements IAnimatable {
 
   /// @private
   IArmatureProxy get proxy => this._proxy!;
+
+  /// @internal
+  ///
+  /// The hub driving this armature's clock and event buffer. Advance *this*
+  /// (once per frame) rather than [advanceTime] if you want buffered events to
+  /// be dispatched.
+  DragonBones get dragonBones => this._dragonBones!;
 
   /// - The event dispatcher.
   IArmatureProxy get eventDispatcher => this._proxy!;

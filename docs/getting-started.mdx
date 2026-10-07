@@ -229,6 +229,49 @@ final armature = assets.buildArmature('you_xin', skinName: 'suit2');
 player.armature.animation.timeScale = 0.5;
 ```
 
+### React to an event — a footstep, or the end of an animation
+
+Animations carry events the animator placed on the timeline, and the runtime
+reports its own lifecycle. Both go through the armature's dispatcher, which is
+the binding's — here, the player's:
+
+```dart
+// "the animation finished" — switch state, open a door, whatever comes next
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.COMPLETE,
+  (event) => debugPrint('${event.animationState?.name} finished'),
+);
+
+// a named event the animator dropped on a frame
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.FRAME_EVENT,
+  (event) {
+    if (event.name == 'fire') {
+      spawnProjectile();
+    }
+  },
+);
+```
+
+The types you can listen for: `EventObject.FRAME_EVENT` and
+`EventObject.SOUND_EVENT` (from `"events"` / `"sound"` on a timeline frame),
+plus `START`, `LOOP_COMPLETE`, `COMPLETE`, `FADE_IN`, `FADE_IN_COMPLETE`,
+`FADE_OUT` and `FADE_OUT_COMPLETE`.
+
+Three things worth knowing:
+
+- **Events arrive after the frame is posed**, never during it. That is why a
+  listener may safely play another animation, as above.
+- A `soundEvent` is delivered **twice**: once on the armature and once on the
+  `DragonBones` hub's event manager (`eventManager`). That second delivery is
+  deliberate — audio belongs to the application, not to one armature — so if you
+  hook audio there, listen in one place only.
+- **The runtime does not play audio.** It reports the name; you decide what it
+  means. Same for `play`, `gotoAndPlay` and every other name in an event.
+
+Because events are only built when someone is listening
+(`hasDBEventListener`), a player that ignores them pays nothing for this.
+
 ## Debugging: nothing is drawing
 
 Two counters on the player tell you why a slot was skipped during the last

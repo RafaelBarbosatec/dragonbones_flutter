@@ -105,6 +105,49 @@ void main() {
 
     expect(player.skippedMeshSlots, 5);
   });
+
+  test('reports complete when an animation ends', () async {
+    // The event path end-to-end through the renderer: the player advances the
+    // hub (which is what dispatches), the headless display behind the assets
+    // delivers, and the listener runs.
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+    final completed = <String>[];
+    armature.eventDispatcher.addDBEventListener(
+      EventObject.COMPLETE,
+      (event) => completed.add(event.animationState?.name ?? ''),
+    );
+
+    // playTimes 1: played through once, so `complete` fires at the end.
+    final state = armature.animation.play('stand', 1)!;
+    final frames = (state.totalTime * 24).ceil() + 4;
+    for (var i = 0; i < frames; i++) {
+      player.update(1 / 24);
+    }
+
+    expect(completed, <String>['stand']);
+  });
+
+  test('a zero step refreshes the pose without advancing time', () async {
+    // `update(0)` means "recompute the pose now" — the head-following example
+    // uses it right after flipping the character. The hub's clock ignores a
+    // zero step, so the player takes the direct path for it.
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+    player.play('walk');
+    player.update(1 / 24);
+    final before = armature.animation.lastAnimationState!.currentTime;
+
+    player.update(0);
+
+    expect(armature.animation.lastAnimationState!.currentTime, before,
+        reason: 'a zero step must not move the playhead');
+    expect(player.drawList, isNotEmpty);
+  });
 }
 
 /// Rasterises the player centred in a [size] box and counts pixels that differ

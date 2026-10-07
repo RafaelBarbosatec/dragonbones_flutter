@@ -19,7 +19,9 @@ jobs:
       - name: Build official runtime
         run: tool/ground_truth/fetch_runtime.sh
       - name: Regenerate dumps
-        run: tool/ground_truth/run_all.sh
+        run: |
+          tool/ground_truth/run_all.sh
+          tool/ground_truth/run_events.sh
       - name: Assert dumps unchanged
         run: |
           if ! git diff --quiet -- tool/ground_truth/out; then
@@ -61,6 +63,12 @@ jobs:
         run: dart run tool/parse_check.dart
       - name: Diff against the official runtime (oracle)
         run: dart run tool/check_against_oracle.dart
+      # The pose oracle above proves the geometry; this one proves the *events*.
+      # It replays every fixture twice and compares the event sequence — frame,
+      # type, name, time, armature, animation state, bone, slot — with the
+      # official runtime (47 fixtures, 174 scenarios, ~1.9k events).
+      - name: Diff the event stream against the official runtime
+        run: dart run tool/check_events_against_oracle.dart
       # Every character bundled with the example app has to load: those assets
       # are copies of test/fixtures/unity, and nothing about the originals proves
       # the copies are complete. This also cross-checks each atlas against its
@@ -93,6 +101,18 @@ jobs:
           flutter-version: '3.41.2'
           channel: stable
           cache: true
+      # `dragonbones_flutter` depends on a *published* `dragonbones`, on purpose:
+      # a `path:` dependency is rejected by `pub publish`, so the archive has to
+      # name a version. Which means a plain `pub get` here would test the last
+      # release rather than the code in this PR. `pubspec_overrides.yaml` is read
+      # by the local `pub` and is never published — exactly the split needed.
+      - name: Point the runtime at this working copy
+        run: |
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            dragonbones:
+              path: ../dragonbones
+          YAML
       - run: flutter pub get
       - run: flutter analyze
       # pub.dev scores formatting: pana runs `dart format --output=none
@@ -105,6 +125,14 @@ jobs:
       - name: Analyze the example app
         working-directory: example
         run: |
+          # Same override, one level further: the example resolves
+          # `dragonbones_flutter` by path, which in turn needs this repository's
+          # `dragonbones`.
+          cat > pubspec_overrides.yaml <<'YAML'
+          dependency_overrides:
+            dragonbones:
+              path: ../packages/dragonbones
+          YAML
           flutter pub get
           flutter analyze
 

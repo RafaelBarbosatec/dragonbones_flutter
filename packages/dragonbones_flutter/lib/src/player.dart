@@ -59,7 +59,34 @@ class DragonBonesPlayer {
   int skippedMissingTexture = 0;
 
   /// Advances the animation by [dt] seconds.
-  void update(double dt) => armature.advanceTime(dt);
+  ///
+  /// A non-zero step goes through the hub ([db.DragonBones.advanceTime]), which
+  /// is what makes buffered events reach their listeners — the frame is posed
+  /// first and the events are dispatched afterwards, so a listener is free to
+  /// play another animation from inside the callback. Register them on the
+  /// armature:
+  ///
+  /// ```dart
+  /// player.armature.eventDispatcher.addDBEventListener(
+  ///   db.EventObject.COMPLETE,
+  ///   (event) => print('${event.animationState!.name} finished'),
+  /// );
+  /// ```
+  ///
+  /// A zero step keeps the direct path: it means "recompute the pose without
+  /// advancing time", which the hub's clock deliberately ignores.
+  ///
+  /// Note the hub is shared by every armature the factory built, so a player
+  /// driven this way advances its siblings too — one hub per asset, as in the
+  /// example, keeps that unambiguous.
+  void update(double dt) {
+    if (dt == 0.0) {
+      armature.advanceTime(0.0);
+      return;
+    }
+
+    armature.dragonBones.advanceTime(dt);
+  }
 
   /// Starts [name] playing and returns its state, or null if unknown.
   db.AnimationState? play([String? name]) => armature.animation.play(name);

@@ -22,7 +22,6 @@ them throw. All of them will make your animation quietly wrong.
 
 | Feature | What is missing | What you will see |
 | --- | --- | --- |
-| **Animation events** (`EventObject`) | The event dispatcher, `bufferEvent`, and the frame/action/loop/complete/fade hooks are not ported. | Nothing fires. You cannot play a sound, spawn a projectile or apply damage from a frame. This is the most consequential gap for a game. |
 | **IK constraint timelines** (`IKConstraintTimelineState`) | `AnimationState._updateTimelines()` is a no-op, so no constraint timeline state is ever created. | **Static** IK (the `weight`/`bendPositive` in the armature data) is applied and verified. **Animated** IK is not: if the animation keys the IK weight, the limb follows the raw bone transforms instead — feet slide, hands miss targets. |
 | **Path constraints** (`PathConstraint`) | `PathConstraintData` is parsed into the model; the runtime class is never built. `Armature._buildConstraints` handles IK only. | A bone meant to travel along a path stays at its own transform. |
 | **`Surface` bones** (`SurfaceTimelineState`) | `SurfaceData` and `Surface` exist as model/armature classes; the timeline state is never created, and the bone/slot timeline switch has no `Surface` case. | Surface deformation does not happen. The bone behaves as a plain bone. |
@@ -45,7 +44,6 @@ skeleton JSON:
 | `"type":30` in a timeline | `IKConstraint` timeline — the IK weight is animated and will be ignored. |
 | `"type":23` in a `slot` timeline | `SlotZIndex` timeline — not supported. |
 | `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — not supported. |
-| `"actions"`, or animation frames carrying events | Animation events — they will not fire. |
 
 (The timeline type numbers above are the ones this port uses; see
 `TimelineType` in `packages/dragonbones/lib/src/core/dragon_bones.dart`.)
@@ -109,9 +107,16 @@ frame against the official DragonBones runtime:
   posed vertices, UVs and triangle indices,
 - **static IK constraints**,
 - nested child armatures, flattened with the parent slot's matrix composed on,
+- **animation events**: frame events and sound events placed on the timeline,
+  the `start` / `loopComplete` / `complete` / `fadeIn` / `fadeOut` lifecycle
+  events, and the propagation that makes playing an animation on a parent play
+  the same-named animation on its nested children — compared against the
+  official runtime as a **sequence**, per fixture and per animation, in
+  `tool/check_events_against_oracle.dart`,
 - z-order and action timelines.
 
-51 assets, 757,701 numeric comparisons, 0 mismatches. The numbers, the method and
-the caveats (including that the mesh oracle is the official *Egret binding*, not
-the core runtime) are in [Architecture & verification](/architecture#verification)
+51 assets, 757,701 numeric comparisons and 1,919 events, 0 mismatches. The
+numbers, the method and the caveats (including that the mesh oracle is the
+official *Egret binding*, not the core runtime) are in
+[Architecture & verification](/architecture#verification)
 and [Investigation findings](/findings).
