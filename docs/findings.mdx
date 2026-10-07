@@ -45,23 +45,32 @@ The one prior Dart port, [`bp74/StageXL_DragonBones`](https://github.com/bp74/St
 
 So it is not reusable. It is, however, *evidence that a Dart port is tractable*.
 
-## 3. Flame's position
+## 3. The premise, in the public record
+
+The premise of this project — that Flutter had no **free** path to skeletal
+animation — is not an assumption. It is on the record, stated by the people who
+maintain the ecosystem:
 
 - [flame-engine/flame#1516](https://github.com/flame-engine/flame/issues/1516) (2022, closed) —
   spydon: *"export your animation to a spritesheet … Otherwise I can recommend Rive"*.
 - [flame-engine/flame#3788](https://github.com/flame-engine/flame/issues/3788) (**open**, 2025-12-08) —
   *"spine 2D animation as well as Rive animations are not free … Dragonbones is a
-  free alternative to Spine 2D animations."* spydon's reply:
+  free alternative to Spine 2D animations."* The maintainer's reply:
 
   > "Duplicate of #1516, but I'll keep this one open. We're not planning on
   > implementing this from the core team, but if anyone feels like creating a
   > bridge package to live in the monorepo we're more than happy to review it and
   > take it in."
 
-- Existing bridges follow exactly that shape: `flame_spine`, `flame_rive`,
-  `flame_lottie`, `flame_svg`. Flame **core has no mesh/vertices component**
-  (grepping `flame-engine/flame` for `drawVertices` / `VerticesComponent` finds
-  nothing) — the bridge owns its rendering.
+  That is an invitation, not a plan — nothing was going to appear unless someone
+  built it, which is why this port exists.
+
+- The existing skeletal/vector animation bridges all follow the same shape —
+  `flame_spine`, `flame_rive`, `flame_lottie`, `flame_svg` — and each wraps a
+  paid or hosted pipeline rather than a free one. Relevant mechanically too:
+  Flame **core has no mesh/vertices component** (grepping `flame-engine/flame`
+  for `drawVertices` / `VerticesComponent` finds nothing), so any bridge owns its
+  own rendering regardless.
 
 ## 4. Rendering: feasible on `Canvas`
 
@@ -81,7 +90,7 @@ direct:
 | per-vertex `colors` | `Vertices(colors: …)` |
 | `blend_mode` | `Canvas.drawVertices(…, BlendMode)` (`plus` for additive) |
 | `texture` per slot | one draw call per texture (the runtime already batches this way) |
-| `zOrder` | draw order / Flame `priority` |
+| `zOrder` | draw order / engine draw priority |
 | plain sprite slot | `drawImageRect` / `drawRawAtlas` (batchable) |
 
 Two notes that matter:
@@ -99,13 +108,13 @@ Two notes that matter:
 
 | | **A. Pure Dart port** | **B. FFI onto DragonBonesCPP** |
 | --- | --- | --- |
-| Work | port the runtime + write the Flame component | C shim + FFI bindings + per-platform builds |
+| Work | port the runtime + write the engine component | C shim + FFI bindings + per-platform builds |
 | LOC | ~18k full, ~9–12k for a v1 subset | ~3–5k |
 | Flutter **web** | ✅ works | ❌ (wasm only) |
 | pub.dev | ✅ pure source | ⚠️ prebuilt binaries |
 | Build infra | **none** | CMake / Gradle / CocoaPods per OS |
 | Correctness risk | medium (translation) | **low** (mature runtime) |
-| Precedent | `flame_lottie` | `spine_flutter` |
+| Precedent | a pure-Dart animation bridge | a C++ runtime behind FFI |
 
 **Decision: route A, porting from TypeScript.** Reasons:
 

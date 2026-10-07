@@ -13,7 +13,7 @@ graph TD
     B --> C["Armature.buildDrawList()<br/><i>plain SlotDrawData list</i>"]
     C --> D["dragonbones_flutter<br/><i>Canvas renderer</i>"]
     D --> E["Flutter app"]
-    D --> F["Flame Component"]
+    D --> F["Engine component"]
     D --> G["Bonfire GameComponent"]
     C --> H["Headless test / server<br/><i>no Flutter at all</i>"]
 ```
@@ -35,10 +35,11 @@ It also means the runtime runs on the **web** and on a **server**, with no
 engine at all.
 
 The renderer stays engine-agnostic for the same reason: it exposes
-`update(dt)` + `render(Canvas)` and nothing else, so it drops into plain Flutter,
-Flame, Bonfire or your own painter without the runtime (or you) taking on a game
-engine dependency. The repository is named after the renderer package because
-that is the one users import, but `dragonbones` is the substrate.
+`update(dt)` + `render(Canvas)` and nothing else, so it drops into a plain Flutter
+app, any game engine's component, or your own painter without the runtime (or
+you) taking on a gameplay-engine dependency. The repository is named after the
+renderer package because that is the one users import, but `dragonbones` is the
+substrate.
 
 ## The runtime
 

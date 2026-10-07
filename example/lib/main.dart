@@ -1,6 +1,6 @@
 // Minimal example: draw a DragonBones animation on a plain Flutter Canvas.
 //
-// No Flame, no game engine — just `update(dt)` + `render(canvas)` driven by the
+// No game engine — just `update(dt)` + `render(canvas)` driven by the
 // provided widget. See example/README.md for how to run it.
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
 import 'package:flutter/material.dart';

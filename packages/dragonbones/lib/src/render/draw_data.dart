@@ -2,10 +2,10 @@ part of dragonbones;
 
 /// One thing to draw for one slot at the armature's current pose.
 ///
-/// Framework-agnostic on purpose: it carries plain numbers, no `dart:ui`, no
-/// Flame. A renderer turns this into a canvas call; a Flame component turns the
-/// same data into a component. This is the seam that keeps the runtime usable
-/// from any Flutter project, a Flame game, Bonfire, or a headless test.
+/// Framework-agnostic on purpose: it carries plain numbers and no `dart:ui`. A
+/// renderer turns this into canvas calls; a game-engine component turns the same
+/// data into a component. This is the seam that keeps the runtime usable from
+/// any Flutter project, any game engine, or a headless test.
 ///
 /// Two shapes are possible, and they are drawn differently:
 ///

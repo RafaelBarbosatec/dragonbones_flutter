@@ -3,12 +3,19 @@ title: Introduction
 description: A pure-Dart DragonBones runtime and a Flutter Canvas renderer. What they are, what is verified, and what is not.
 ---
 
-Skeletal (bone-based) animation for **Dart**, **Flutter**, **Flame** and
-**Bonfire**, from animations exported by **DragonBones** — the free, MIT
-alternative to Spine and Rive.
+Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
+exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
-DragonBones runtimes exist officially for TypeScript/JS, C++, C#, Java, Haxe and
-ActionScript — but **never for Dart or Flutter**. This project closes that gap.
+## The premise
+
+Skeletal animation is table stakes for a 2D game: slot and skin swapping, deform
+meshes, bone attachment, animation events. **In Flutter there has been no free,
+end-to-end option for it — a free editor, an open format, and an MIT runtime a
+game can depend on without a commercial licence.**
+
+DragonBones is exactly that, and its runtimes shipped officially for
+TypeScript/JS, C++, C#, Java, Haxe and ActionScript — but **never for Dart or
+Flutter**. This project closes that gap.
 
 <Info>
   **Status: v0.1.0.** Feature-complete for the common case, not for everything.
@@ -25,7 +32,7 @@ ActionScript — but **never for Dart or Flutter**. This project closes that gap
 | Package | What it is | Depends on |
 | --- | --- | --- |
 | `dragonbones` | The runtime. Parses and evaluates the format, and exposes the pose as a **framework-agnostic draw list**. | Nothing. Zero dependencies. |
-| `dragonbones_flutter` | The renderer. Turns that draw list into `Canvas` calls. | Flutter only — **not Flame**. |
+| `dragonbones_flutter` | The renderer. Turns that draw list into `Canvas` calls. | Flutter only — no game engine. |
 
 The split is the whole point. A skeletal runtime is a pile of matrix maths, and
 that maths **drifts silently** — a bone off by a few thousandths looks fine until
@@ -41,7 +48,7 @@ player.render(canvas); // draw the pose
 ```
 
 That is the entire contract, which is why the same code drops into a plain
-Flutter app, a Flame `Component`, a Bonfire `GameComponent`, or your own painter.
+Flutter app, any game engine's component, or your own painter.
 
 ## Verify it yourself
 
@@ -65,7 +72,7 @@ of the reference dumps themselves.
     Load an export and put an animated character on a Canvas.
   </Card>
   <Card title="Integration" icon="puzzle-piece" href="/integration">
-    Flame, Bonfire, your own painter, or a headless test.
+    Any engine, your own painter, or a headless test.
   </Card>
   <Card title="Limitations" icon="triangle-exclamation" href="/limitations">
     Read this one before committing a project. What is not evaluated, and how to
@@ -95,17 +102,15 @@ what is verified.
   will see, and how to tell from the JSON whether your assets rely on it.
 </Warning>
 
-## Why it exists
+## Why free matters
 
-Flame has `flame_spine`, `flame_rive` and `flame_lottie`, but no DragonBones
-bridge — and `flame_spine`/`flame_rive` require paid tooling. There is an open
-Flame issue asking for exactly this, and the maintainers answered with an
-explicit invitation:
+There is no shortage of ways to make a 2D game in Flutter. There has, until now,
+been no free way to give it skeletal animation — the pipeline a game would have
+to adopt (editor, format and runtime) was commercial in some part that mattered.
 
-> "We're not planning on implementing this from the core team, but if anyone
-> feels like creating a bridge package to live in the monorepo we're more than
-> happy to review it and take it in."
-> — [flame-engine/flame#3788](https://github.com/flame-engine/flame/issues/3788)
+DragonBones is MIT end to end. That is the whole point of this port: not a nicer
+API, but the same free pipeline the rest of the ecosystem already had, finally
+available to Dart.
 
 For a real game the win is not "prettier sprites". It is **slot and skin
 swapping** (equip armour and weapons without authoring N sprites per

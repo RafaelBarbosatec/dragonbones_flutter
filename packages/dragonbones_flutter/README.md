@@ -19,14 +19,13 @@ player.update(dt);     // advance the animation
 player.render(canvas); // draw the current pose
 ```
 
-That is the whole contract. It depends on Flutter, **not on Flame** — so it drops
-into anything that hands you a `Canvas`:
+That is the whole contract. It depends on Flutter, **not on any game engine** — so
+it drops into anything that hands you a `Canvas`:
 
 | Where you are | How you use it |
 | --- | --- |
 | Plain Flutter app | `DragonBonesWidget`, or your own `CustomPainter` |
-| Flame game | call the two methods from a `Component` |
-| Bonfire | call them from a `GameComponent` |
+| Any game engine | call the two methods from its component/frame hook |
 | Headless test / server | assert on `armature.buildDrawList()` — the runtime alone, no Flutter |
 
 The renderer never mutates engine objects. The runtime is driven through a

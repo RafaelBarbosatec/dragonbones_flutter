@@ -3,8 +3,7 @@
 Draws the `Dragon` fixture and lets you switch between its animations
 (`stand`, `walk`, `jump`, `fall`).
 
-There is **no game engine here** — no Flame, no Bonfire. The renderer is driven
-by two calls:
+There is **no game engine here**. The renderer is driven by two calls:
 
 ```dart
 player.update(dt);     // advance the animation
@@ -43,7 +42,7 @@ player.play('walk');
 DragonBonesWidget(player: player, fit: DragonBonesFit.contain)
 
 // Option B — drive it yourself from your own frame loop
-// (Flame `Component`, Bonfire `GameComponent`, a `CustomPainter`, …):
+// (an engine component, a `CustomPainter`, …):
 player.update(dt);
 player.render(canvas);
 ```

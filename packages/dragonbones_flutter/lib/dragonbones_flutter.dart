@@ -1,6 +1,6 @@
 /// Draw DragonBones skeletal animations on a Flutter [Canvas].
 ///
-/// This package deliberately does **not** depend on Flame (or any game engine).
+/// This package deliberately does **not** depend on any gameplay engine.
 /// Everything hangs off two methods, so it works anywhere:
 ///
 /// ```dart
@@ -14,7 +14,7 @@
 ///
 /// * a plain Flutter app — wrap it in [DragonBonesWidget], or call the two
 ///   methods from your own `CustomPainter`;
-/// * a Flame game — call `update`/`render` from a `Component`;
+/// * a game engine — call `update`/`render` from its component;
 /// * Bonfire — same, from a `GameComponent`;
 /// * a headless test — the geometry is already verified against the official
 ///   runtime, so you can assert on `armature.buildDrawList()`.

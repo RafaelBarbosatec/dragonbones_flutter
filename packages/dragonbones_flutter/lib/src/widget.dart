@@ -15,7 +15,7 @@ enum DragonBonesFit {
 
 /// Plays a [DragonBonesPlayer] and repaints it every frame.
 ///
-/// A convenience wrapper — if you already own a frame loop (a Flame component,
+/// A convenience wrapper — if you already own a frame loop (an engine component,
 /// a Bonfire game, a custom `CustomPainter`), call
 /// [DragonBonesPlayer.update] and [DragonBonesPlayer.render] directly and skip
 /// this widget entirely.

@@ -20,7 +20,7 @@ typedef AtlasImageResolver = ui.Image? Function(db.TextureAtlasData atlas);
 /// player.render(canvas); // draw the current pose
 /// ```
 ///
-/// Hook it to whatever drives your frames — a `Ticker`, a Flame `Component`'s
+/// Hook it to whatever drives your frames — a `Ticker`, an engine component's
 /// `update`/`render`, a Bonfire `GameComponent`, or a `CustomPainter`.
 ///
 /// Nothing here mutates engine objects: the runtime is driven through

@@ -15,9 +15,9 @@ class BuildArmaturePackage {
 
 /// Factory that turns parsed [DragonBonesData] into runnable [Armature]s.
 ///
-/// Engine-agnostic: the three `_build*` hooks are abstract, so a binding (Flame,
-/// a headless test harness, ...) supplies how an armature, a slot and a texture
-/// atlas are actually represented.
+/// Engine-agnostic: the three `_build*` hooks are abstract, so a binding (a
+/// renderer, a headless test harness, ...) supplies how an armature, a slot and
+/// a texture atlas are actually represented.
 ///
 /// Ported from `.ref/dragonBones-ts/factory/BaseFactory.ts`. The upstream object
 /// pool is deliberately not ported — Dart's GC handles that — so objects are

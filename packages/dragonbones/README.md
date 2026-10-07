@@ -9,8 +9,8 @@ for its own sake:
 - it can be **verified with a bare Dart SDK**, with no GPU and no device, which
   is how the maths is proven correct (see [Correctness](#correctness));
 - it runs **anywhere Dart runs**, including the web and headless on a server;
-- it can back a Flutter renderer, a Flame component, a Bonfire `GameComponent`,
-  or your own `Canvas` code, without dragging an engine along.
+- it can back a Flutter renderer, a game engine's component, or your own `Canvas`
+  code, without dragging a gameplay engine along.
 
 ```dart
 import 'dart:convert';

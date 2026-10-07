@@ -4,8 +4,8 @@
 
 First release. Draws DragonBones skeletal animations on a Flutter `Canvas`
 through two methods, `update(dt)` and `render(canvas)` — with no dependency on
-Flame or any other engine, so the same code drops into a plain Flutter app, a
-Flame `Component`, a Bonfire `GameComponent`, or a `CustomPainter`.
+any game engine, so the same code drops into a plain Flutter app, an engine
+component, or a `CustomPainter`.
 
 - Sprites (`drawImageRect`) and deformable meshes (`drawVertices` +
   `ImageShader`), including skinned meshes with bone weights and animated FFD.

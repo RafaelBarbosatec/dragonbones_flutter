@@ -1,6 +1,6 @@
 ---
 title: Integration
-description: Use the renderer inside Flame, Bonfire, a CustomPainter, or a headless test, plus loading assets from anywhere.
+description: Use the renderer inside a game engine, a CustomPainter, or a headless test, plus loading assets from anywhere.
 ---
 
 The renderer depends on Flutter, **not** on any engine. It is two methods, so
@@ -12,8 +12,8 @@ player.render(canvas);
 ```
 
 > **Honesty note.** The recipes on this page are illustrative. The packages have
-> no Flame or Bonfire dependency, so those adapters are *not* exercised by this
-> repository's CI — the tested paths are the plain-Flutter widget and the
+> no gameplay-engine dependency at all, so those adapters are *not* exercised by
+> this repository's CI — the tested paths are the plain-Flutter widget and the
 > headless draw list. Treat the engine snippets as wiring you may need to adjust
 > to your version of the engine.
 
@@ -28,15 +28,14 @@ DragonBonesWidget(player: player, animation: 'walk', fit: DragonBonesFit.contain
 Or drive it yourself from a `Ticker` — see
 [Getting started](/getting-started#4-put-it-on-screen).
 
-## Flame
+## Game engines
 
-A `PositionComponent` that owns the player. Flame's transform (position,
-rotation, scale) is applied by the engine before `render` is called, so the
-component just delegates:
+Every engine's component wraps the same two calls. The engine applies its own
+transform before calling `render`, so the component just delegates:
 
 ```dart
-class DragonBonesComponent extends PositionComponent {
-  DragonBonesComponent(this.player, {super.position, super.size});
+class DragonBonesComponent extends YourEngineComponent {
+  DragonBonesComponent(this.player);
 
   final DragonBonesPlayer player;
 
@@ -61,16 +60,15 @@ Two things worth knowing:
   static size, use the bounds at the first frame, or the armature's own extent.
 - **Anchor.** By default the armature is drawn from its origin. Use
   `player.offset` to shift it so the character's feet sit on the component
-  position, or use `anchor` on the `PositionComponent` once you know the size.
+  position, or set the engine's own anchor once you know the size.
 
-A reusable `flame_dragonbones` package (a real `PositionComponent` with a
-hitbox derived from the skeleton) is on the
+A reusable component package (with a hitbox derived from the skeleton) is on the
 [roadmap](https://github.com/RafaelBarbosatec/dragonbones_flutter#roadmap).
 
 ## Bonfire
 
 Bonfire components render inside the engine's own transform pipeline, so a
-`GameComponent` looks much like the Flame one:
+`GameComponent` looks much like the generic one above:
 
 ```dart
 class DragonBonesGameComponent extends GameComponent {
