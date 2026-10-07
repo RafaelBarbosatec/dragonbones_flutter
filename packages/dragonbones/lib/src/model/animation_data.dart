@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @private
 class AnimationData extends BaseObject {
@@ -58,8 +58,10 @@ class AnimationData extends BaseObject {
 
   void addBoneTimeline(String timelineName, TimelineData timeline) => _add(this.boneTimelines, timelineName, timeline);
   void addSlotTimeline(String timelineName, TimelineData timeline) => _add(this.slotTimelines, timelineName, timeline);
-  void addConstraintTimeline(String timelineName, TimelineData timeline) => _add(this.constraintTimelines, timelineName, timeline);
-  void addAnimationTimeline(String timelineName, TimelineData timeline) => _add(this.animationTimelines, timelineName, timeline);
+  void addConstraintTimeline(String timelineName, TimelineData timeline) =>
+      _add(this.constraintTimelines, timelineName, timeline);
+  void addAnimationTimeline(String timelineName, TimelineData timeline) =>
+      _add(this.animationTimelines, timelineName, timeline);
 
   List<TimelineData>? getBoneTimelines(String timelineName) => this.boneTimelines[timelineName];
   List<TimelineData>? getSlotTimelines(String timelineName) => this.slotTimelines[timelineName];

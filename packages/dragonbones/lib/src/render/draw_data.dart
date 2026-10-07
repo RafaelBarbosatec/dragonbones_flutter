@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// One thing to draw for one slot at the armature's current pose.
 ///
@@ -139,9 +139,8 @@ extension ArmatureDrawList on Armature {
     final armatureScale = armature.armatureData.scale;
 
     for (final slot in armature.getSlots()) {
-      final matrix = parentMatrix == null
-          ? slot.globalTransformMatrix
-          : _concat(parentMatrix, slot.globalTransformMatrix);
+      final matrix =
+          parentMatrix == null ? slot.globalTransformMatrix : _concat(parentMatrix, slot.globalTransformMatrix);
 
       final childArmature = slot.childArmature;
       if (childArmature != null) {
@@ -184,8 +183,7 @@ extension ArmatureDrawList on Armature {
           pivotX: mesh != null ? 0.0 : slot.pivotX,
           pivotY: mesh != null ? 0.0 : slot.pivotY,
           quadWidth: mesh != null ? 0.0 : (rotated ? regionH : regionW) * scale,
-          quadHeight:
-              mesh != null ? 0.0 : (rotated ? regionW : regionH) * scale,
+          quadHeight: mesh != null ? 0.0 : (rotated ? regionW : regionH) * scale,
           zOrder: zOverride ?? slot.zOrder,
           blendMode: slot.blendMode,
           visible: slot.isVisible,

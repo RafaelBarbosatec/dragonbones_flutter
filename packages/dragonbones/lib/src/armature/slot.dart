@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @private
 class DisplayFrame extends BaseObject {
@@ -18,7 +18,7 @@ class DisplayFrame extends BaseObject {
   }
 
   void updateDeformVertices() {
-    if (this.rawDisplayData == null || this.deformVertices.length != 0) {
+    if (this.rawDisplayData == null || this.deformVertices.isNotEmpty) {
       return;
     }
 
@@ -35,9 +35,7 @@ class DisplayFrame extends BaseObject {
     if (rawGeometryData.weight != null) {
       vertexCount = rawGeometryData.weight!.count * 2;
     } else {
-      vertexCount = rawGeometryData.data!.intArray![
-              rawGeometryData.offset + BinaryOffset.GeometryVertexCount] *
-          2;
+      vertexCount = rawGeometryData.data!.intArray![rawGeometryData.offset + BinaryOffset.GeometryVertexCount] * 2;
     }
 
     // NOTE: upstream does `this.deformVertices.length = vertexCount` (JS fills
@@ -216,9 +214,7 @@ abstract class Slot extends TransformObject {
     final List<Object?> disposeDisplayList = <Object?>[];
     for (final displayFrame in this._displayFrames) {
       final Object? display = displayFrame.display;
-      if (display != this._rawDisplay &&
-          display != this._meshDisplay &&
-          disposeDisplayList.indexOf(display) < 0) {
+      if (display != this._rawDisplay && display != this._meshDisplay && disposeDisplayList.indexOf(display) < 0) {
         disposeDisplayList.add(display);
       }
 
@@ -337,9 +333,9 @@ abstract class Slot extends TransformObject {
         this._textureData != prevTextureData) {
       // Update pivot offset.
       if (this._geometryData == null && this._textureData != null) {
-        final ImageDisplayData imageDisplayData =
-            ((displayData != null && displayData.type == DisplayType.Image) ? displayData : rawDisplayData!)
-                as ImageDisplayData;
+        final ImageDisplayData imageDisplayData = ((displayData != null && displayData.type == DisplayType.Image)
+            ? displayData
+            : rawDisplayData!) as ImageDisplayData;
         final double scale = this._textureData!.parent!.scale * this._armature!._armatureData!.scale;
         final Rectangle? frame = this._textureData!.frame;
 
@@ -378,11 +374,10 @@ abstract class Slot extends TransformObject {
         }
 
         if (!DragonBones.yDown) {
-          this._pivotY = (this._textureData!.rotated
-                  ? this._textureData!.region.width
-                  : this._textureData!.region.height) *
-                  scale -
-              this._pivotY;
+          this._pivotY =
+              (this._textureData!.rotated ? this._textureData!.region.width : this._textureData!.region.height) *
+                      scale -
+                  this._pivotY;
         }
       } else {
         this._pivotX = 0.0;
@@ -482,10 +477,12 @@ abstract class Slot extends TransformObject {
           }
 
           if (this._displayFrame != null) {
-            final displayData =
-                this._displayFrame!.displayData != null ? this._displayFrame!.displayData : this._displayFrame!.rawDisplayData;
-            final List<ActionData>? actions =
-                (displayData != null && displayData.type == DisplayType.Armature) ? (displayData as ArmatureDisplayData).actions : null;
+            final displayData = this._displayFrame!.displayData != null
+                ? this._displayFrame!.displayData
+                : this._displayFrame!.rawDisplayData;
+            final List<ActionData>? actions = (displayData != null && displayData.type == DisplayType.Armature)
+                ? (displayData as ArmatureDisplayData).actions
+                : null;
 
             if (actions != null && actions.isNotEmpty) {
               // Milestone 2: buffering child armature actions is not ported.
@@ -675,8 +672,8 @@ abstract class Slot extends TransformObject {
         this._updateGlobalTransformMatrix(isCache);
 
         if (isCache && this._cachedFrameIndices != null) {
-          this._cachedFrameIndex =
-              this._cachedFrameIndices![cacheFrameIndex] = this._armature!._armatureData!.setCacheFrame(this.globalTransformMatrix, this.global);
+          this._cachedFrameIndex = this._cachedFrameIndices![cacheFrameIndex] =
+              this._armature!._armatureData!.setCacheFrame(this.globalTransformMatrix, this.global);
         }
       } else {
         this._armature!._armatureData!.getCacheFrame(this.globalTransformMatrix, this.global, this._cachedFrameIndex);
@@ -901,8 +898,7 @@ abstract class Slot extends TransformObject {
   /// (`DeformTimelineState`, and the lazy call in `AnimationState`) is not — so
   /// this is always empty today and mesh deformation comes from the bone
   /// weights alone. The consumer in [buildMeshGeometry] is written for it.
-  List<double> get deformVertices =>
-      this._displayFrame?.deformVertices ?? const <double>[];
+  List<double> get deformVertices => this._displayFrame?.deformVertices ?? const <double>[];
 
   /// Anchor that sits on the slot origin, in display pixels.
   double get pivotX => this._pivotX;
@@ -919,15 +915,15 @@ abstract class Slot extends TransformObject {
 
   /// Slot colour as `[aM, rM, gM, bM, aO, rO, gO, bO]`.
   List<double> get colorValues => <double>[
-    this._colorTransform.alphaMultiplier,
-    this._colorTransform.redMultiplier,
-    this._colorTransform.greenMultiplier,
-    this._colorTransform.blueMultiplier,
-    this._colorTransform.alphaOffset,
-    this._colorTransform.redOffset,
-    this._colorTransform.greenOffset,
-    this._colorTransform.blueOffset,
-  ];
+        this._colorTransform.alphaMultiplier,
+        this._colorTransform.redMultiplier,
+        this._colorTransform.greenMultiplier,
+        this._colorTransform.blueMultiplier,
+        this._colorTransform.alphaOffset,
+        this._colorTransform.redOffset,
+        this._colorTransform.greenOffset,
+        this._colorTransform.blueOffset,
+      ];
 
   /// - The display object that the slot displays at this time.
   Object? get display => this._display;
@@ -936,7 +932,7 @@ abstract class Slot extends TransformObject {
       return;
     }
 
-    if (this._displayFrames.length == 0) {
+    if (this._displayFrames.isEmpty) {
       this.displayFrameCount = 1;
       this._displayIndex = 0;
     }

@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// Color transform (multipliers + offsets).
 class ColorTransform {

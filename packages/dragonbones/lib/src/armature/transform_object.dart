@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - The base class of the transform object.
 ///

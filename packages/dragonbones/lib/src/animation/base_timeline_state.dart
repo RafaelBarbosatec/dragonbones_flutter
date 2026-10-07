@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @internal
 ///
@@ -183,7 +183,8 @@ abstract class TimelineState extends BaseObject {
         if (this._frameIndex != frameIndex) {
           this._frameIndex = frameIndex;
           this._frameOffset = this._animationData!.frameOffset +
-              (this._timelineArray![this._timelineData!.offset + BinaryOffset.TimelineFrameOffset + this._frameIndex] as int);
+              (this._timelineArray![this._timelineData!.offset + BinaryOffset.TimelineFrameOffset + this._frameIndex]
+                  as int);
           this._onArriveAtFrame();
         }
       } else if (this._frameIndex < 0) {
@@ -288,7 +289,8 @@ abstract class TweenTimelineState extends TimelineState {
               this._frameArray![this._frameOffset + BinaryOffset.FrameTweenEasingOrCurveSampleCount] as int;
         } else if (this._tweenType != TweenType.None && this._tweenType != TweenType.Line) {
           this._tweenEasing =
-              (this._frameArray![this._frameOffset + BinaryOffset.FrameTweenEasingOrCurveSampleCount] as num).toDouble() *
+              (this._frameArray![this._frameOffset + BinaryOffset.FrameTweenEasingOrCurveSampleCount] as num)
+                      .toDouble() *
                   0.01;
         }
       } else {
@@ -303,7 +305,8 @@ abstract class TweenTimelineState extends TimelineState {
         final int nextFrameOffset = this._animationData!.frameOffset +
             (this._timelineArray![this._timelineData!.offset + BinaryOffset.TimelineFrameOffset + this._frameIndex + 1]
                 as int);
-        final double frameDuration = (this._frameArray![nextFrameOffset] as num).toDouble() * this._frameRateR - this._framePosition;
+        final double frameDuration =
+            (this._frameArray![nextFrameOffset] as num).toDouble() * this._frameRateR - this._framePosition;
 
         if (frameDuration > 0.0) {
           this._frameDurationR = 1.0 / frameDuration;
@@ -324,10 +327,11 @@ abstract class TweenTimelineState extends TimelineState {
       this._tweenProgress = (this.currentTime - this._framePosition) * this._frameDurationR;
 
       if (this._tweenType == TweenType.Curve) {
-        this._tweenProgress = TweenTimelineState._getEasingCurveValue(
-            this._tweenProgress, this._frameArray!, this._curveCount, this._frameOffset + BinaryOffset.FrameCurveSamples);
+        this._tweenProgress = TweenTimelineState._getEasingCurveValue(this._tweenProgress, this._frameArray!,
+            this._curveCount, this._frameOffset + BinaryOffset.FrameCurveSamples);
       } else if (this._tweenType != TweenType.Line) {
-        this._tweenProgress = TweenTimelineState._getEasingValue(this._tweenType, this._tweenProgress, this._tweenEasing);
+        this._tweenProgress =
+            TweenTimelineState._getEasingValue(this._tweenType, this._tweenProgress, this._tweenEasing);
       }
     }
   }
@@ -359,9 +363,8 @@ abstract class SingleValueTimelineState extends TweenTimelineState {
       final int valueOffset = this._valueOffset + this._frameValueOffset + this._frameIndex;
 
       if (this._isTween) {
-        final int nextValueOffset = this._frameIndex == this._frameCount - 1
-            ? this._valueOffset + this._frameValueOffset
-            : valueOffset + 1;
+        final int nextValueOffset =
+            this._frameIndex == this._frameCount - 1 ? this._valueOffset + this._frameValueOffset : valueOffset + 1;
 
         if (valueScale == 1.0) {
           this._current = valueArray[valueOffset].toDouble();
@@ -420,9 +423,8 @@ abstract class DoubleValueTimelineState extends TweenTimelineState {
       final int valueOffset = this._valueOffset + this._frameValueOffset + this._frameIndex * 2;
 
       if (this._isTween) {
-        final int nextValueOffset = this._frameIndex == this._frameCount - 1
-            ? this._valueOffset + this._frameValueOffset
-            : valueOffset + 2;
+        final int nextValueOffset =
+            this._frameIndex == this._frameCount - 1 ? this._valueOffset + this._frameValueOffset : valueOffset + 2;
 
         if (valueScale == 1.0) {
           this._currentA = valueArray[valueOffset].toDouble();

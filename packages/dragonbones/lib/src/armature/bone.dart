@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - Bone is one of the most important logical units in the armature animation
 /// system, and is responsible for the realization of translate, rotation,
@@ -349,8 +349,8 @@ class Bone extends TransformObject {
         }
 
         if (isCache && this._cachedFrameIndices != null) {
-          this._cachedFrameIndex =
-              this._cachedFrameIndices![cacheFrameIndex] = this._armature!._armatureData!.setCacheFrame(this.globalTransformMatrix, this.global);
+          this._cachedFrameIndex = this._cachedFrameIndices![cacheFrameIndex] =
+              this._armature!._armatureData!.setCacheFrame(this.globalTransformMatrix, this.global);
         }
       } else {
         this._armature!._armatureData!.getCacheFrame(this.globalTransformMatrix, this.global, this._cachedFrameIndex);

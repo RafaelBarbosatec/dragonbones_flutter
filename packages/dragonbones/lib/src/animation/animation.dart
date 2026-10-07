@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - The animation player is used to play the animation data and manage the
 /// animation states.
@@ -179,7 +179,7 @@ class Animation extends BaseObject {
           // Modify animation states size.
           this._animationStates.length -= r;
 
-          if (this._lastAnimationState == null && this._animationStates.length > 0) {
+          if (this._lastAnimationState == null && this._animationStates.isNotEmpty) {
             this._lastAnimationState = this._animationStates[this._animationStates.length - 1];
           }
         }
@@ -236,7 +236,7 @@ class Animation extends BaseObject {
       }
     }
 
-    if (this._animationStates.length == 0) {
+    if (this._animationStates.isEmpty) {
       animationConfig.fadeInTime = 0.0;
     } else if (animationConfig.fadeInTime < 0.0) {
       animationConfig.fadeInTime = animationData.fadeInTime;
@@ -288,7 +288,7 @@ class Animation extends BaseObject {
     this._animationDirty = true;
     this._armature!._cacheFrameIndex = -1;
 
-    if (this._animationStates.length > 0) {
+    if (this._animationStates.isNotEmpty) {
       // Sort animation state.
       var added = false;
 
@@ -327,7 +327,7 @@ class Animation extends BaseObject {
     this._animationConfig!.fadeInTime = 0.0;
     this._animationConfig!.animation = animationName != null ? animationName : '';
 
-    if (animationName != null && animationName.length > 0) {
+    if (animationName != null && animationName.isNotEmpty) {
       this.playConfig(this._animationConfig!);
     } else if (this._lastAnimationState == null) {
       final defaultAnimation = this._armature!.armatureData.defaultAnimation;
@@ -346,8 +346,7 @@ class Animation extends BaseObject {
   }
 
   /// - Fade in a specific animation.
-  AnimationState? fadeIn(
-      String animationName,
+  AnimationState? fadeIn(String animationName,
       [double fadeInTime = -1.0,
       int playTimes = -1,
       int layer = 0,
@@ -416,7 +415,7 @@ class Animation extends BaseObject {
       }
     }
 
-    return this._animationStates.length > 0;
+    return this._animationStates.isNotEmpty;
   }
 
   String get lastAnimationName => this._lastAnimationState != null ? this._lastAnimationState!.name : '';

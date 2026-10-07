@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @private
 ///
@@ -33,8 +33,7 @@ abstract class BaseFactory {
   final Map<String, DragonBonesData> _dragonBonesDataMap = <String, DragonBonesData>{};
 
   /// @internal
-  final Map<String, List<TextureAtlasData>> _textureAtlasDataMap =
-      <String, List<TextureAtlasData>>{};
+  final Map<String, List<TextureAtlasData>> _textureAtlasDataMap = <String, List<TextureAtlasData>>{};
 
   /// @internal
   DragonBones? _dragonBones;
@@ -186,8 +185,7 @@ abstract class BaseFactory {
 
           if (displayData != null) {
             if (dataPackage.textureAtlasName.isNotEmpty) {
-              final textureData =
-                  this._getTextureData(dataPackage.textureAtlasName, displayData.path);
+              final textureData = this._getTextureData(dataPackage.textureAtlasName, displayData.path);
               slot.replaceTextureData(textureData, i);
             }
 
@@ -266,9 +264,7 @@ abstract class BaseFactory {
     DisplayData displayData,
     Slot slot,
   ) {
-    final dataName = dataPackage != null
-        ? dataPackage.dataName
-        : displayData.parent!.parent!.parent!.name;
+    final dataName = dataPackage != null ? dataPackage.dataName : displayData.parent!.parent!.parent!.name;
 
     switch (displayData.type) {
       case DisplayType.Image:
@@ -283,8 +279,7 @@ abstract class BaseFactory {
 
       case DisplayType.Armature:
         final armatureDisplayData = displayData as ArmatureDisplayData;
-        final childArmature =
-            this._buildChildArmature(dataPackage, slot, armatureDisplayData);
+        final childArmature = this._buildChildArmature(dataPackage, slot, armatureDisplayData);
         if (childArmature != null) {
           childArmature.inheritAnimation = armatureDisplayData.inheritAnimation;
 
@@ -383,15 +378,14 @@ abstract class BaseFactory {
   void addTextureAtlasData(TextureAtlasData data, [String? name]) {
     name ??= data.name;
     final list = this._textureAtlasDataMap.putIfAbsent(
-      name,
-      () => <TextureAtlasData>[],
-    );
+          name,
+          () => <TextureAtlasData>[],
+        );
     list.add(data);
   }
 
   /// Returns the cached texture atlases registered under [name], or null.
-  List<TextureAtlasData>? getTextureAtlasData(String name) =>
-      this._textureAtlasDataMap[name];
+  List<TextureAtlasData>? getTextureAtlasData(String name) => this._textureAtlasDataMap[name];
 
   /// Looks up armature data by name.
   ArmatureData? getArmatureData(String name, [String dragonBonesName = '']) {

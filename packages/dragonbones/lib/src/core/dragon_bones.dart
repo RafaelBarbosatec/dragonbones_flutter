@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @private
 class BinaryOffset {
@@ -189,7 +189,7 @@ class DragonBones {
   WorldClock get clock => _clock;
 
   void advanceTime(double passedTime) {
-    if (_objects.length > 0) {
+    if (_objects.isNotEmpty) {
       _objects.clear();
     }
     _clock.advanceTime(passedTime);
@@ -245,7 +245,7 @@ class WorldClock {
   }
 
   void add(IAnimatable value) {
-    if (_animatebles.indexOf(value) < 0 && value != this) {
+    if (_animatebles.indexOf(value) < 0) {
       _animatebles.add(value);
     }
   }

@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// Read-only view over the shared mesh arrays that back a [GeometryData].
 ///
@@ -25,14 +25,11 @@ part of dragonbones;
 /// The vertex block is in **slot-local units** at the armature's own scale; it
 /// is *not* the posed mesh. See [buildMeshGeometry] for that.
 extension MeshGeometryArrays on GeometryData {
-  int get _meshVertexCount =>
-      this.data!.intArray![this.offset + BinaryOffset.GeometryVertexCount];
+  int get _meshVertexCount => this.data!.intArray![this.offset + BinaryOffset.GeometryVertexCount];
 
-  int get _meshTriangleCount =>
-      this.data!.intArray![this.offset + BinaryOffset.GeometryTriangleCount];
+  int get _meshTriangleCount => this.data!.intArray![this.offset + BinaryOffset.GeometryTriangleCount];
 
-  int get _vertexFloatOffset => _u16(
-      this.data!.intArray![this.offset + BinaryOffset.GeometryFloatOffset]);
+  int get _vertexFloatOffset => _u16(this.data!.intArray![this.offset + BinaryOffset.GeometryFloatOffset]);
 
   /// Reinterprets a (possibly negative) `Int16List` entry as its unsigned value.
   static int _u16(int value) => value < 0 ? value + 65536 : value;
@@ -189,9 +186,7 @@ MeshGeometry? buildMeshGeometry({
 
       for (var j = 0; j < boneCount; ++j) {
         final boneIndex = intArray[iB++];
-        final bone = boneIndex >= 0 && boneIndex < bones.length
-            ? bones[boneIndex]
-            : null;
+        final bone = boneIndex >= 0 && boneIndex < bones.length ? bones[boneIndex] : null;
 
         // Upstream reads the weight and both offsets *inside* this null check,
         // so a missing bone desynchronises the cursor. Kept as-is: it cannot

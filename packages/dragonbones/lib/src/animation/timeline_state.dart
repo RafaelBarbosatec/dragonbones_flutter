@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @internal
 ///
@@ -58,7 +58,8 @@ class ActionTimelineState extends TimelineState {
 
           if (this._timelineArray != null) {
             this._frameOffset = this._animationData!.frameOffset +
-                (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + this._frameIndex] as int);
+                (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + this._frameIndex]
+                    as int);
 
             if (isReverse) {
               if (crossedFrameIndex < 0) {
@@ -76,7 +77,8 @@ class ActionTimelineState extends TimelineState {
 
               while (crossedFrameIndex >= 0) {
                 final int frameOffset = this._animationData!.frameOffset +
-                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex] as int);
+                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex]
+                        as int);
                 final double framePosition = (this._frameArray![frameOffset] as num).toDouble() / this._frameRate;
 
                 if (this._position <= framePosition && framePosition <= this._position + this._duration) {
@@ -98,7 +100,8 @@ class ActionTimelineState extends TimelineState {
                 final int prevFrameIndex = (prevTime * this._frameRate).floor();
                 crossedFrameIndex = this._frameIndices![timelineData.frameIndicesOffset + prevFrameIndex];
                 final int frameOffset = this._animationData!.frameOffset +
-                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex] as int);
+                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex]
+                        as int);
                 final double framePosition = (this._frameArray![frameOffset] as num).toDouble() / this._frameRate;
 
                 if (this.currentPlayTimes == prevPlayTimes) {
@@ -125,7 +128,8 @@ class ActionTimelineState extends TimelineState {
                 }
 
                 final int frameOffset = this._animationData!.frameOffset +
-                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex] as int);
+                    (this._timelineArray![timelineData.offset + BinaryOffset.TimelineFrameOffset + crossedFrameIndex]
+                        as int);
                 final double framePosition = (this._frameArray![frameOffset] as num).toDouble() / this._frameRate;
 
                 if (this._position <= framePosition && framePosition <= this._position + this._duration) {

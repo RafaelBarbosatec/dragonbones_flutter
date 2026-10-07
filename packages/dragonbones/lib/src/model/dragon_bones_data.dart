@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - The DragonBones data.
 /// A DragonBones data contains multiple armature data.

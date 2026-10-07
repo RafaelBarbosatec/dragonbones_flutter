@@ -50,6 +50,13 @@ jobs:
       # NOTE: `--no-fatal-infos` does not exist for `dart analyze` (that is a
       # Flutter flag); infos are already non-fatal here, warnings are fatal.
       - run: dart analyze
+      # pub.dev scores formatting: pana runs `dart format --output=none
+      # --set-exit-if-changed` over the package with its own options file, into
+      # which it passes this package's `formatter:` section through — so the
+      # `page_width: 120` in analysis_options.yaml is what pub.dev uses too.
+      # Gate it here rather than discovering it at publish time.
+      - name: Formatting (what pub.dev scores)
+        run: dart format --output=none --set-exit-if-changed .
       - name: Structural check (parse fixtures)
         run: dart run tool/parse_check.dart
       - name: Diff against the official runtime (oracle)
@@ -88,9 +95,9 @@ jobs:
           flutter pub get
           flutter analyze
 
-  # Keeps the "publishable" claim honest for the runtime. `publish_to: none` stays
-  # in place, so nothing is ever uploaded — but a package that would fail
-  # `pub publish` should fail CI instead of failing on release day.
+  # Keeps the "publishable" claim honest for the runtime: a package that would
+  # fail `pub publish` should fail CI instead of failing on release day. The
+  # dry-run never uploads anything.
   #
   # The renderer is deliberately NOT dry-run here. It depends on `dragonbones`
   # through a `path:`, and `pub publish` rejects path dependencies outright

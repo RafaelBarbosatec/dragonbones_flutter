@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - The animation state is generated when the animation data is played.
 ///
@@ -375,7 +375,9 @@ class AnimationState extends BaseObject {
 
                       if (geometryData.offset == geometryOffset) {
                         final timeline = DeformTimelineState();
-                        timeline.target = this._armature!.animation
+                        timeline.target = this
+                            ._armature!
+                            .animation
                             .getBlendState(BlendState.SLOT_DEFORM, displayFrame.rawDisplayData!.name, slot);
                         timeline.displayFrame = displayFrame;
                         timeline.init(this._armature!, this, timelineData);
@@ -427,8 +429,7 @@ class AnimationState extends BaseObject {
               if (geometryData != null && !ffdFlags.contains(geometryData.offset)) {
                 final timeline = DeformTimelineState();
                 timeline.displayFrame = displayFrame;
-                timeline.target = this._armature!.animation
-                    .getBlendState(BlendState.SLOT_DEFORM, slot.name, slot);
+                timeline.target = this._armature!.animation.getBlendState(BlendState.SLOT_DEFORM, slot.name, slot);
                 timeline.init(this._armature!, this, null);
                 this._slotBlendTimelines.add(timeline);
                 this._poseTimelines.add(timeline);
@@ -478,7 +479,8 @@ class AnimationState extends BaseObject {
       this._fadeProgress = isFadeOut ? 0.0 : 1.0;
     } else if (this._fadeTime > 0.0) {
       // Fading.
-      this._fadeProgress = isFadeOut ? (1.0 - this._fadeTime / this.fadeTotalTime) : (this._fadeTime / this.fadeTotalTime);
+      this._fadeProgress =
+          isFadeOut ? (1.0 - this._fadeTime / this.fadeTotalTime) : (this._fadeTime / this.fadeTotalTime);
     } else {
       // Before fade.
       this._fadeProgress = isFadeOut ? 1.0 : 0.0;
@@ -514,7 +516,7 @@ class AnimationState extends BaseObject {
     this.timeScale = animationConfig.timeScale;
     this.fadeTotalTime = animationConfig.fadeInTime;
     this.autoFadeOutTime = animationConfig.autoFadeOutTime;
-    this.name = animationConfig.name.length > 0 ? animationConfig.name : animationConfig.animation;
+    this.name = animationConfig.name.isNotEmpty ? animationConfig.name : animationConfig.animation;
     this.group = animationConfig.group;
     //
     this._weight = animationConfig.weight;
@@ -552,7 +554,7 @@ class AnimationState extends BaseObject {
       this._fadeProgress = 0.999999; // Make different.
     }
 
-    if (animationConfig.boneMask.length > 0) {
+    if (animationConfig.boneMask.isNotEmpty) {
       // NOTE: upstream grows the array via `.length =` and then assigns each
       // index; in Dart that would require filling with null first.
       this._boneMask
@@ -729,7 +731,7 @@ class AnimationState extends BaseObject {
         }
       }
 
-      if (this._animationTimelines.length > 0) {
+      if (this._animationTimelines.isNotEmpty) {
         var dL = 100.0;
         var dR = 100.0;
         AnimationState? leftState;
@@ -790,7 +792,7 @@ class AnimationState extends BaseObject {
       if (this._subFadeState > 0) {
         this._subFadeState = 0;
 
-        if (this._poseTimelines.length > 0) {
+        if (this._poseTimelines.isNotEmpty) {
           // Remove pose timelines.
           for (final timeline in this._poseTimelines) {
             var index = this._boneTimelines.indexOf(timeline);
@@ -910,7 +912,7 @@ class AnimationState extends BaseObject {
 
   /// - Check if a specific bone mask is included.
   bool containsBoneMask(String boneName) {
-    return this._boneMask.length == 0 || this._boneMask.indexOf(boneName) >= 0;
+    return this._boneMask.isEmpty || this._boneMask.indexOf(boneName) >= 0;
   }
 
   /// - Add a specific bone mask.
@@ -949,7 +951,7 @@ class AnimationState extends BaseObject {
       final currentBone = this._armature!.getBone(boneName);
       if (currentBone != null) {
         final bones = this._armature!.getBones();
-        if (this._boneMask.length > 0) {
+        if (this._boneMask.isNotEmpty) {
           // Remove recursive mixing.
           for (final bone in bones) {
             final i = this._boneMask.indexOf(bone.name);
@@ -1016,7 +1018,10 @@ class AnimationState extends BaseObject {
       }
     }
 
-    if (this.playTimes > 0 && currentPlayTimes == this.playTimes - 1 && value == this._duration && this._parent == null) {
+    if (this.playTimes > 0 &&
+        currentPlayTimes == this.playTimes - 1 &&
+        value == this._duration &&
+        this._parent == null) {
       value = this._duration - 0.000001;
     }
 

@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// Grows a `List<int>` by [count] zero-filled entries.
 ///
@@ -562,7 +562,7 @@ class ObjectDataParser extends DataParser {
       this._armature!.addAction(action, false);
     }
 
-    if (this._actionFrames.length == 0) {
+    if (this._actionFrames.isEmpty) {
       // First frame.
       frame = ActionFrame();
       frame.frameStart = 0;
@@ -856,7 +856,8 @@ class ObjectDataParser extends DataParser {
       return null;
     }
     //TODO
-    final targetDisplay = defaultSkin.getDisplay(target.name, _getString(rawData, DataParser.TARGET_DISPLAY, target.name));
+    final targetDisplay =
+        defaultSkin.getDisplay(target.name, _getString(rawData, DataParser.TARGET_DISPLAY, target.name));
     if (targetDisplay is! PathDisplayData) {
       return null;
     }
@@ -884,7 +885,7 @@ class ObjectDataParser extends DataParser {
     for (final boneName in bones) {
       final bone = this._armature!.getBone(boneName as String);
       if (bone != null) {
-        constraint.AddBone(bone);
+        constraint.addBone(bone);
 
         if (constraint.root == null) {
           constraint.root = bone;
@@ -914,11 +915,12 @@ class ObjectDataParser extends DataParser {
       slot.color = SlotData.createColor();
       this._parseColorTransform(rawData[DataParser.COLOR], slot.color);
     } else {
-      slot.color = SlotData.DEFAULT_COLOR;
+      slot.color = SlotData.defaultColor;
     }
 
     if (_has(rawData, DataParser.ACTIONS)) {
-      this._slotChildActions[slot.name] = this._parseActionData(rawData[DataParser.ACTIONS], ActionType.Play, null, null);
+      this._slotChildActions[slot.name] =
+          this._parseActionData(rawData[DataParser.ACTIONS], ActionType.Play, null, null);
     }
 
     return slot;
@@ -1280,7 +1282,7 @@ class ObjectDataParser extends DataParser {
       }
     }
 
-    if (this._actionFrames.length > 0) {
+    if (this._actionFrames.isNotEmpty) {
       this._animation!.actionTimeline = this._parseTimeline(
           null, this._actionFrames, '', TimelineType.Action, FrameValueType.Step, 0, this._parseActionFrame);
       this._actionFrames.length = 0;
@@ -1384,8 +1386,8 @@ class ObjectDataParser extends DataParser {
               }
 
               this._geometry = surface.geometry;
-              timeline = this._parseTimeline(rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Float, 0,
-                  this._parseDeformFrame);
+              timeline = this._parseTimeline(
+                  rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Float, 0, this._parseDeformFrame);
 
               this._geometry = null;
               break;
@@ -1411,16 +1413,16 @@ class ObjectDataParser extends DataParser {
                 continue;
               }
 
-              timeline = this._parseTimeline(rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Float, 0,
-                  this._parseDeformFrame);
+              timeline = this._parseTimeline(
+                  rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Float, 0, this._parseDeformFrame);
 
               this._geometry = null;
               break;
             }
 
           case TimelineType.SlotColor:
-            timeline = this._parseTimeline(rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Int, 1,
-                this._parseSlotColorFrame);
+            timeline = this._parseTimeline(
+                rawTimeline, null, DataParser.FRAME, timelineType, FrameValueType.Int, 1, this._parseSlotColorFrame);
             break;
         }
 
@@ -1654,8 +1656,8 @@ class ObjectDataParser extends DataParser {
       colorTimeline = this._parseTimeline(rawData, null, DataParser.COLOR_FRAME, TimelineType.SlotColor,
           FrameValueType.Int, 1, this._parseSlotColorFrame);
     } else {
-      colorTimeline = this._parseTimeline(rawData, null, DataParser.FRAME, TimelineType.SlotColor,
-          FrameValueType.Int, 1, this._parseSlotColorFrame);
+      colorTimeline = this._parseTimeline(
+          rawData, null, DataParser.FRAME, TimelineType.SlotColor, FrameValueType.Int, 1, this._parseSlotColorFrame);
     }
 
     if (displayTimeline != null) {
@@ -1685,7 +1687,8 @@ class ObjectDataParser extends DataParser {
         final sampleCount = frameCount + 1;
         this._helpArray.clear();
         _growFloat(this._helpArray, sampleCount);
-        final isOmited = this._samplingEasingCurve((rawData[DataParser.CURVE] as List<dynamic>).cast<num>(), this._helpArray);
+        final isOmited =
+            this._samplingEasingCurve((rawData[DataParser.CURVE] as List<dynamic>).cast<num>(), this._helpArray);
 
         _growInt(this._frameArray, 1 + 1 + this._helpArray.length);
         this._frameArray[frameOffset + BinaryOffset.FrameTweenType] = TweenType.Curve;
@@ -1740,8 +1743,7 @@ class ObjectDataParser extends DataParser {
         {
           frameOffset = this._parseFrame(rawData, frameStart, frameCount);
           _growInt(this._frameArray, 1);
-          this._frameArray[frameOffset + 1] =
-              _getNumber(rawData, DataParser.VALUE, this._frameDefaultValue).toInt();
+          this._frameArray[frameOffset + 1] = _getNumber(rawData, DataParser.VALUE, this._frameDefaultValue).toInt();
           break;
         }
 

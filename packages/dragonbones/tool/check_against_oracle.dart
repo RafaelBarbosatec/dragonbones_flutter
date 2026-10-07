@@ -37,8 +37,7 @@ double _r(num v) => v.toDouble();
 
 /// One oracle dump to check, and how to reproduce the state it captures.
 class Target {
-  const Target(this.dump, this.skeletonPath, this.texturePath, this.armature,
-      this.animation, this.label);
+  const Target(this.dump, this.skeletonPath, this.texturePath, this.armature, this.animation, this.label);
 
   final String dump;
 
@@ -62,23 +61,16 @@ const String _unity = '$_fixtures/unity';
 const String _mecha = 'example/assets/mecha_1004d';
 
 const List<Target> namedTargets = <Target>[
-  Target('Dragon_rest', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json',
-      'Dragon', null, 'rest'),
-  Target('Dragon_stand', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json',
-      'Dragon', 'stand', 'stand'),
-  Target('Dragon_walk', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json',
-      'Dragon', 'walk', 'walk'),
-  Target('Dragon_jump', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json',
-      'Dragon', 'jump', 'jump'),
-  Target('Dragon_fall', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json',
-      'Dragon', 'fall', 'fall'),
+  Target('Dragon_rest', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json', 'Dragon', null, 'rest'),
+  Target('Dragon_stand', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json', 'Dragon', 'stand', 'stand'),
+  Target('Dragon_walk', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json', 'Dragon', 'walk', 'walk'),
+  Target('Dragon_jump', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json', 'Dragon', 'jump', 'jump'),
+  Target('Dragon_fall', '$_fixtures/Dragon_ske.json', '$_fixtures/Dragon_tex.json', 'Dragon', 'fall', 'fall'),
   // 60 bones, 5 deformable meshes (2 of them skinned), FFD timelines.
-  Target('Long_stand', '$_fixtures/龙_ske.json', '$_fixtures/龙_tex.json',
-      'armatureName', 'stand', 'long'),
+  Target('Long_stand', '$_fixtures/龙_ske.json', '$_fixtures/龙_tex.json', 'armatureName', 'stand', 'long'),
   // Four armatures in one file, three of them nested inside slots of the first —
   // this is what exercises the child-armature flattening.
-  Target('Mecha_walk', '$_mecha/ske.json', '$_mecha/tex.json',
-      'mecha_1004d', 'walk', 'mecha'),
+  Target('Mecha_walk', '$_mecha/ske.json', '$_mecha/tex.json', 'mecha_1004d', 'walk', 'mecha'),
 ];
 
 /// One entry per `out/unity__*.json`, resolved back to its source files.
@@ -91,11 +83,7 @@ List<Target> discoverUnityTargets(String repoRoot) {
   final outDir = Directory('$repoRoot/tool/ground_truth/out');
   if (!outDir.existsSync()) return const <Target>[];
 
-  final dumps = outDir
-      .listSync()
-      .whereType<File>()
-      .where((f) => f.uri.pathSegments.last.startsWith('unity__'))
-      .toList()
+  final dumps = outDir.listSync().whereType<File>().where((f) => f.uri.pathSegments.last.startsWith('unity__')).toList()
     ..sort((a, b) => a.path.compareTo(b.path));
 
   final targets = <Target>[];
@@ -112,11 +100,7 @@ List<Target> discoverUnityTargets(String repoRoot) {
     final dir = Directory('$repoRoot/$_unity/$fixture');
     if (!dir.existsSync()) continue;
 
-    final skeletons = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('_ske.json'))
-        .toList()
+    final skeletons = dir.listSync().whereType<File>().where((f) => f.path.endsWith('_ske.json')).toList()
       ..sort((a, b) => a.path.compareTo(b.path));
     if (skeletons.isEmpty) continue;
 
@@ -148,8 +132,7 @@ List<Map<String, dynamic>> sampleFrames(
   Target target,
 ) {
   // `null` armature means "the first one the asset declares", matching dump.js.
-  final armatureName =
-      target.armature ?? factory.getDragonBonesData(dataName)!.armatureNames.first;
+  final armatureName = target.armature ?? factory.getDragonBonesData(dataName)!.armatureNames.first;
   final built = factory.buildArmature(armatureName, dataName, '')!;
 
   final animationNames = built.armatureData.animationNames;
@@ -185,9 +168,15 @@ List<Map<String, dynamic>> sampleFrames(
       slots.add(<String, dynamic>{
         'name': slot.name,
         'displayIndex': slot.displayIndex,
-        if (d != null) 'matrix': <double>[
-          d.matrix.a, d.matrix.b, d.matrix.c, d.matrix.d, d.matrix.tx, d.matrix.ty,
-        ],
+        if (d != null)
+          'matrix': <double>[
+            d.matrix.a,
+            d.matrix.b,
+            d.matrix.c,
+            d.matrix.d,
+            d.matrix.tx,
+            d.matrix.ty,
+          ],
         if (d != null) 'pivot': <double>[d.pivotX, d.pivotY],
         if (d != null) 'quadSize': <double>[d.quadWidth, d.quadHeight],
         if (d != null) 'region': d.region,
@@ -261,8 +250,7 @@ void compareNumbers(
     return;
   }
   if (got.length != want.length) {
-    out.add(Mismatch(
-        label, frame, '$what length', want.length.toDouble(), got.length.toDouble()));
+    out.add(Mismatch(label, frame, '$what length', want.length.toDouble(), got.length.toDouble()));
     return;
   }
   for (var i = 0; i < want.length; i++) {
@@ -299,8 +287,7 @@ void compareIndices(
 ) {
   if (want == null) return;
   if (got == null || got.length != want.length) {
-    out.add(Mismatch(label, frame, '$what length', want.length.toDouble(),
-        (got?.length ?? 0).toDouble()));
+    out.add(Mismatch(label, frame, '$what length', want.length.toDouble(), (got?.length ?? 0).toDouble()));
     return;
   }
   for (var i = 0; i < want.length; i++) {
@@ -474,8 +461,8 @@ void main(List<String> args) {
           // is checked even for a slot that draws nothing at all.
           if (g['displayIndex'] != w['displayIndex']) {
             anyMismatch = true;
-            result.mismatches.add(Mismatch(target.label, f, '$prefix.displayIndex',
-                _r(w['displayIndex'] as num), _r(g['displayIndex'] as num)));
+            result.mismatches.add(Mismatch(
+                target.label, f, '$prefix.displayIndex', _r(w['displayIndex'] as num), _r(g['displayIndex'] as num)));
           }
 
           // ---- nested armature ------------------------------------------
@@ -483,14 +470,11 @@ void main(List<String> args) {
           // the child's slots instead, with its own matrix composed onto theirs.
           final wChildren = w['childSlots'] as List<dynamic>?;
           if (wChildren != null) {
-            final parentMatrix =
-                <double>[for (final v in (w['matrix'] as List<dynamic>)) _r(v as num)];
+            final parentMatrix = <double>[for (final v in (w['matrix'] as List<dynamic>)) _r(v as num)];
 
             for (final child in wChildren.cast<Map<String, dynamic>>()) {
               final childName = child['name'] as String;
-              final childMatrix = <double>[
-                for (final v in (child['matrix'] as List<dynamic>)) _r(v as num)
-              ];
+              final childMatrix = <double>[for (final v in (child['matrix'] as List<dynamic>)) _r(v as num)];
               // `parent ∘ child`, composed longhand — see [compose].
               final expected = compose(parentMatrix, childMatrix);
 
@@ -501,8 +485,12 @@ void main(List<String> args) {
               SlotDrawData? entry;
               for (final candidate in entries) {
                 final c = <double>[
-                  candidate.matrix.a, candidate.matrix.b, candidate.matrix.c,
-                  candidate.matrix.d, candidate.matrix.tx, candidate.matrix.ty,
+                  candidate.matrix.a,
+                  candidate.matrix.b,
+                  candidate.matrix.c,
+                  candidate.matrix.d,
+                  candidate.matrix.tx,
+                  candidate.matrix.ty,
                 ];
                 var matches = true;
                 for (var i = 0; i < 6; i++) {
@@ -518,20 +506,29 @@ void main(List<String> args) {
               }
               if (entry == null) {
                 anyMismatch = true;
-                result.mismatches
-                    .add(Mismatch(target.label, f, 'child slot $childName missing', 0, 0));
+                result.mismatches.add(Mismatch(target.label, f, 'child slot $childName missing', 0, 0));
                 continue;
               }
-              compareNumbers(result.mismatches, target.label, f, 'child $childName.matrix',
+              compareNumbers(
+                  result.mismatches,
+                  target.label,
+                  f,
+                  'child $childName.matrix',
                   <double>[
-                    entry.matrix.a, entry.matrix.b, entry.matrix.c,
-                    entry.matrix.d, entry.matrix.tx, entry.matrix.ty,
-                  ], expected, track);
+                    entry.matrix.a,
+                    entry.matrix.b,
+                    entry.matrix.c,
+                    entry.matrix.d,
+                    entry.matrix.tx,
+                    entry.matrix.ty,
+                  ],
+                  expected,
+                  track);
               // The child draws in its parent slot's place in the order.
               if (entry.zOrder != w['zOrder']) {
                 anyMismatch = true;
-                result.mismatches.add(Mismatch(target.label, f, 'child $childName.zOrder',
-                    _r(w['zOrder'] as num), _r(entry.zOrder as num)));
+                result.mismatches.add(Mismatch(
+                    target.label, f, 'child $childName.zOrder', _r(w['zOrder'] as num), _r(entry.zOrder as num)));
               }
               result.childSlots++;
             }
@@ -546,42 +543,41 @@ void main(List<String> args) {
             // whose display index is -1, for instance).
             if (w['textureName'] != null || w['mesh'] != null) {
               anyMismatch = true;
-              result.mismatches
-                  .add(Mismatch(target.label, f, '$prefix missing in port', 0, 0));
+              result.mismatches.add(Mismatch(target.label, f, '$prefix missing in port', 0, 0));
             }
             continue;
           }
 
-          compareNumbers(result.mismatches, target.label, f, '$prefix.player',
-              gMatrix, w['matrix'] as List<dynamic>?, track);
-          compareNumbers(result.mismatches, target.label, f, '$prefix.pivot',
-              g['pivot'] as List<dynamic>?, w['pivot'] as List<dynamic>?, track);
+          compareNumbers(
+              result.mismatches, target.label, f, '$prefix.player', gMatrix, w['matrix'] as List<dynamic>?, track);
+          compareNumbers(result.mismatches, target.label, f, '$prefix.pivot', g['pivot'] as List<dynamic>?,
+              w['pivot'] as List<dynamic>?, track);
           // A mesh has no quad: its extent comes from the posed triangle list,
           // not from the atlas region. The port reports 0 there on purpose, so
           // only sprites are compared on this field.
           if (w['mesh'] == null) {
-            compareNumbers(result.mismatches, target.label, f, '$prefix.quadSize',
-                g['quadSize'] as List<dynamic>?, w['quadSize'] as List<dynamic>?, track);
+            compareNumbers(result.mismatches, target.label, f, '$prefix.quadSize', g['quadSize'] as List<dynamic>?,
+                w['quadSize'] as List<dynamic>?, track);
           }
-          compareNumbers(result.mismatches, target.label, f, '$prefix.region',
-              g['region'] as List<dynamic>?, w['region'] as List<dynamic>?, track);
-          compareNumbers(result.mismatches, target.label, f, '$prefix.color',
-              g['color'] as List<dynamic>?, w['color'] as List<dynamic>?, track);
+          compareNumbers(result.mismatches, target.label, f, '$prefix.region', g['region'] as List<dynamic>?,
+              w['region'] as List<dynamic>?, track);
+          compareNumbers(result.mismatches, target.label, f, '$prefix.color', g['color'] as List<dynamic>?,
+              w['color'] as List<dynamic>?, track);
           result.slotFields++;
           if (g['zOrder'] != w['zOrder']) {
             anyMismatch = true;
-            result.mismatches.add(Mismatch(target.label, f, '$prefix.zOrder',
-                _r(w['zOrder'] as num), _r(g['zOrder'] as num)));
+            result.mismatches
+                .add(Mismatch(target.label, f, '$prefix.zOrder', _r(w['zOrder'] as num), _r(g['zOrder'] as num)));
           }
           if (g['visible'] != w['visible']) {
             anyMismatch = true;
-            result.mismatches.add(Mismatch(target.label, f, '$prefix.visible',
-                (w['visible'] as bool) ? 1 : 0, (g['visible'] as bool) ? 1 : 0));
+            result.mismatches.add(Mismatch(
+                target.label, f, '$prefix.visible', (w['visible'] as bool) ? 1 : 0, (g['visible'] as bool) ? 1 : 0));
           }
           if (g['blendMode'] != w['blendMode']) {
             anyMismatch = true;
-            result.mismatches.add(Mismatch(target.label, f, '$prefix.blendMode',
-                _r(w['blendMode'] as num), _r(g['blendMode'] as num)));
+            result.mismatches.add(
+                Mismatch(target.label, f, '$prefix.blendMode', _r(w['blendMode'] as num), _r(g['blendMode'] as num)));
           }
 
           // ---- mesh geometry --------------------------------------------
@@ -590,8 +586,7 @@ void main(List<String> args) {
             final gMesh = g['mesh'] as Map<String, dynamic>?;
             if (gMesh == null) {
               anyMismatch = true;
-              result.mismatches
-                  .add(Mismatch(target.label, f, '$prefix.mesh missing', 0, 0));
+              result.mismatches.add(Mismatch(target.label, f, '$prefix.mesh missing', 0, 0));
             } else {
               if (wMesh['vertexCount'] != gMesh['vertexCount']) {
                 anyMismatch = true;
@@ -605,8 +600,8 @@ void main(List<String> args) {
               }
               compareNumbers(result.mismatches, target.label, f, '$prefix.mesh.vertices',
                   gMesh['vertices'] as List<dynamic>?, wMesh['vertices'] as List<dynamic>?, track);
-              compareNumbers(result.mismatches, target.label, f, '$prefix.mesh.uvs',
-                  gMesh['uvs'] as List<dynamic>?, wMesh['uvs'] as List<dynamic>?, track);
+              compareNumbers(result.mismatches, target.label, f, '$prefix.mesh.uvs', gMesh['uvs'] as List<dynamic>?,
+                  wMesh['uvs'] as List<dynamic>?, track);
               compareIndices(result.mismatches, target.label, f, '$prefix.mesh.indices',
                   gMesh['indices'] as List<dynamic>?, wMesh['indices'] as List<dynamic>?, track);
               result.meshValues += (wMesh['vertices'] as List).length + 1;

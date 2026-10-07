@@ -4,60 +4,18 @@
 // `ObjectDataParser`, and asserts the parsed model against (a) the fixture's own
 // raw JSON and (b) the official-runtime oracle in `tool/ground_truth/out/`.
 //
-// The package's umbrella library (`lib/dragonbones.dart`) declares `part`
-// directives for the armature / animation / factory layers, which are owned by
-// later milestones and intentionally not implemented yet. Importing that
-// umbrella therefore cannot compile. To keep this data-layer check runnable on
-// its own, this script *is* a `dragonbones` library: it pulls in exactly the
-// geom + model + parser parts the data layer needs and nothing else.
+// Run from the package directory:
+//   dart run tool/parse_check.dart
 //
-// Run from the repository root:
-//   dart run packages/dragonbones/tool/parse_check.dart
-//
-// Imports are `dart:` only (the `part` directives are relative source files).
-library dragonbones;
-
+// This was originally a hand-rolled `dragonbones` library that `part`ed the
+// geom / model / parser sources in, because the umbrella library did not
+// compile yet at that milestone. It compiles now, so this is a plain consumer
+// of `package:dragonbones/dragonbones.dart` — which is also what makes it a
+// check of the *public* API rather than of the internals.
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
-import 'dart:typed_data';
 
-part '../lib/src/core/base_object.dart';
-part '../lib/src/core/dragon_bones.dart';
-part '../lib/src/geom/point.dart';
-part '../lib/src/geom/rectangle.dart';
-part '../lib/src/geom/color_transform.dart';
-part '../lib/src/geom/matrix.dart';
-part '../lib/src/geom/transform.dart';
-part '../lib/src/model/user_data.dart';
-part '../lib/src/model/dragon_bones_data.dart';
-part '../lib/src/model/armature_data.dart';
-part '../lib/src/model/display_data.dart';
-part '../lib/src/model/skin_data.dart';
-part '../lib/src/model/animation_data.dart';
-part '../lib/src/model/animation_config.dart';
-part '../lib/src/model/texture_atlas_data.dart';
-part '../lib/src/parser/object_data_parser.dart';
-
-/// JavaScript-compatible remainder (`a % b` truncates towards zero).
-double _jsMod(double a, double b) => a - b * (a / b).truncateToDouble();
-
-/// JavaScript-compatible `Math.round` (rounds .5 towards +Infinity).
-double _jsRound(double value) => (value + 0.5).floorToDouble();
-
-/// JavaScript `||` style numeric coercion used by the object data parser.
-double _number(dynamic value, double defaultValue) {
-  if (value == null) return defaultValue;
-  if (value is num) return value.toDouble();
-  if (value is String) {
-    if (value == 'NaN') return defaultValue;
-    final parsed = double.tryParse(value);
-    return parsed ?? defaultValue;
-  }
-  if (value is bool) return value ? 1.0 : 0.0;
-  return defaultValue;
-}
-
+import 'package:dragonbones/dragonbones.dart';
 
 int _checks = 0;
 int _failures = 0;
@@ -95,8 +53,7 @@ File _findFile(String relative) {
 bool near(double a, double b, [double eps = 1e-4]) => (a - b).abs() <= eps;
 
 /// True when two angles are the same modulo a full turn.
-bool sameAngle(double aRadians, double bRadians) =>
-    Transform.normalizeRadian(aRadians - bRadians).abs() <= 1e-4;
+bool sameAngle(double aRadians, double bRadians) => Transform.normalizeRadian(aRadians - bRadians).abs() <= 1e-4;
 
 double _num(dynamic value, [double fallback = 0.0]) {
   if (value is num) return value.toDouble();
@@ -189,12 +146,10 @@ void main() {
   expect(near(armature.frameRate, 24.0), 'armature.frameRate == 24 (was ${armature.frameRate})');
   expect(armature.parent == data, 'armature.parent links back to DragonBonesData');
 
-  final rawBoneNames = (rawArmature['bone'] as List<dynamic>)
-      .map((b) => (b as Map<String, dynamic>)['name'] as String)
-      .toList();
-  final rawSlotNames = (rawArmature['slot'] as List<dynamic>)
-      .map((s) => (s as Map<String, dynamic>)['name'] as String)
-      .toList();
+  final rawBoneNames =
+      (rawArmature['bone'] as List<dynamic>).map((b) => (b as Map<String, dynamic>)['name'] as String).toList();
+  final rawSlotNames =
+      (rawArmature['slot'] as List<dynamic>).map((s) => (s as Map<String, dynamic>)['name'] as String).toList();
 
   expect(armature.bones.length == 19, '19 bones (was ${armature.bones.length})');
   expect(armature.slots.length == 18, '18 slots (was ${armature.slots.length})');
@@ -207,8 +162,7 @@ void main() {
   expect(armature.bones.keys.join(',') == rawBoneNames.join(','), 'bones map preserves fixture order');
 
   final parsedSlotOrder = armature.sortedSlots.map((s) => s.name).toList();
-  expect(parsedSlotOrder.join(',') == rawSlotNames.join(','),
-      'sortedSlots order == fixture slot[].name order');
+  expect(parsedSlotOrder.join(',') == rawSlotNames.join(','), 'sortedSlots order == fixture slot[].name order');
 
   // ---- Skin / sprite displays ----------------------------------------------------
   final skin = armature.defaultSkin;
@@ -336,16 +290,13 @@ void main() {
           final rawFrame = rawFrames[i] as Map<String, dynamic>;
           final label = '$animationName/$boneName/$key frame[$i]';
 
-          expect(decoded[i].start == expectedStart,
-              '$label start ${decoded[i].start} == $expectedStart');
+          expect(decoded[i].start == expectedStart, '$label start ${decoded[i].start} == $expectedStart');
 
           if (key == 'translateFrame') {
             final rawX = _num(rawFrame['x']);
             final rawY = _num(rawFrame['y']);
-            expect(near(decoded[i].values[0], rawX),
-                '$label x ${decoded[i].values[0]} == $rawX');
-            expect(near(decoded[i].values[1], rawY),
-                '$label y ${decoded[i].values[1]} == $rawY');
+            expect(near(decoded[i].values[0], rawX), '$label x ${decoded[i].values[0]} == $rawX');
+            expect(near(decoded[i].values[1], rawY), '$label y ${decoded[i].values[1]} == $rawY');
           } else if (key == 'rotateFrame') {
             final rawDeg = _num(rawFrame['rotate']);
             final rawSkewDeg = _num(rawFrame['skew']);
@@ -356,11 +307,12 @@ void main() {
           }
 
           // Tween type for the first frame (fixture uses tweenEasing: 0 -> Line).
-          final frameOffset = data.timelineArray![timeline.offset + BinaryOffset.TimelineFrameOffset + i] +
-              animation.frameOffset;
+          final frameOffset =
+              data.timelineArray![timeline.offset + BinaryOffset.TimelineFrameOffset + i] + animation.frameOffset;
           final tweenType = data.frameArray![frameOffset + BinaryOffset.FrameTweenType];
           if (rawFrames.length > 1 && i == 0) {
-            expect(tweenType == 1, // TweenType.Line
+            expect(
+                tweenType == 1, // TweenType.Line
                 '$label first-frame tween == Line (was $tweenType)');
           }
 

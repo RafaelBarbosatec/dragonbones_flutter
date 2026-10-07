@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @private
 class ConstraintData extends BaseObject {
@@ -255,7 +255,7 @@ class BoneData extends BaseObject {
 
 /// @private
 class SlotData extends BaseObject {
-  static final ColorTransform DEFAULT_COLOR = ColorTransform();
+  static final ColorTransform defaultColor = ColorTransform();
 
   static ColorTransform createColor() => ColorTransform();
 
@@ -265,7 +265,7 @@ class SlotData extends BaseObject {
   int zIndex = 0;
   double alpha = 1.0;
   String name = '';
-  ColorTransform color = DEFAULT_COLOR;
+  ColorTransform color = defaultColor;
   UserData? userData;
   BoneData? parent;
 
@@ -277,7 +277,7 @@ class SlotData extends BaseObject {
     this.zIndex = 0;
     this.alpha = 1.0;
     this.name = '';
-    this.color = DEFAULT_COLOR;
+    this.color = defaultColor;
     this.userData = null;
     this.parent = null;
   }
@@ -344,7 +344,7 @@ class PathConstraintData extends ConstraintData {
     this.translateMix = 0.0;
   }
 
-  void AddBone(BoneData value) {
+  void addBone(BoneData value) {
     this.bones.add(value);
   }
 }

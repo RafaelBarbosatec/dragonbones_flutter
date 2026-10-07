@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// Base class for pooled objects in the upstream runtime.
 ///

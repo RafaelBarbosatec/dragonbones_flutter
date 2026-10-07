@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// 2D transform (faithful port of `geom/Transform.ts`).
 class Transform {
@@ -70,7 +70,9 @@ class Transform {
     this.rotation = math.atan(matrix.b / matrix.a);
     double skewX = math.atan(-matrix.c / matrix.d);
 
-    this.scaleX = (this.rotation > -piQ && this.rotation < piQ) ? matrix.a / math.cos(this.rotation) : matrix.b / math.sin(this.rotation);
+    this.scaleX = (this.rotation > -piQ && this.rotation < piQ)
+        ? matrix.a / math.cos(this.rotation)
+        : matrix.b / math.sin(this.rotation);
     this.scaleY = (skewX > -piQ && skewX < piQ) ? matrix.d / math.cos(skewX) : -matrix.c / math.sin(skewX);
 
     if (backupScaleX >= 0.0 && this.scaleX < 0.0) {

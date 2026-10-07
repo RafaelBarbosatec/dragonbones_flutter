@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// @internal
 ///
@@ -41,9 +41,7 @@ class IKConstraint extends Constraint {
     // (`_parseIKConstraint` returns null), so these resolve.
     this._target = this._armature!.getBone(this._constraintData!.target!.name);
     this._root = this._armature!.getBone(this._constraintData!.root!.name);
-    this._bone = this._constraintData!.bone != null
-        ? this._armature!.getBone(this._constraintData!.bone!.name)
-        : null;
+    this._bone = this._constraintData!.bone != null ? this._armature!.getBone(this._constraintData!.bone!.name) : null;
 
     final ikConstraintData = this._constraintData as IKConstraintData;
     this._bendPositive = ikConstraintData.bendPositive;
@@ -138,9 +136,7 @@ class IKConstraint extends Constraint {
       final parentParent = parent.parent;
       if (parentParent != null) {
         final parentParentMatrix = parentParent.globalTransformMatrix;
-        isPPR = parentParentMatrix.a * parentParentMatrix.d -
-                parentParentMatrix.b * parentParentMatrix.c <
-            0.0;
+        isPPR = parentParentMatrix.a * parentParentMatrix.d - parentParentMatrix.b * parentParentMatrix.c < 0.0;
       }
 
       if (isPPR != this._bendPositive) {

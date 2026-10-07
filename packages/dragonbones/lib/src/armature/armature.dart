@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// - An interface that the engine binding implements so the armature can
 /// communicate with the display container.
@@ -179,8 +179,7 @@ class Armature extends BaseObject implements IAnimatable {
     this._parent = null;
   }
 
-  static int _onSortSlots(Slot a, Slot b) =>
-      a._zIndex * 1000 + a._zOrder > b._zIndex * 1000 + b._zOrder ? 1 : -1;
+  static int _onSortSlots(Slot a, Slot b) => a._zIndex * 1000 + a._zOrder > b._zIndex * 1000 + b._zOrder ? 1 : -1;
 
   /// @internal
   void _sortZOrder(List<int>? slotIndices, int offset) {
@@ -315,7 +314,7 @@ class Armature extends BaseObject implements IAnimatable {
 
   /// - Forces a specific bone or its owning slot to update next frame.
   void invalidUpdate([String? boneName, bool updateSlot = false]) {
-    if (boneName != null && boneName.length > 0) {
+    if (boneName != null && boneName.isNotEmpty) {
       final bone = this.getBone(boneName);
       if (bone != null) {
         bone.invalidUpdate();

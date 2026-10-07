@@ -1,4 +1,4 @@
-part of dragonbones;
+part of '../../dragonbones.dart';
 
 /// A [Slot] with every engine-side render hook stubbed out.
 ///
@@ -134,9 +134,4 @@ class HeadlessTextureAtlasData extends TextureAtlasData {
 }
 
 /// @internal
-class HeadlessTextureData extends TextureData {
-  @override
-  void _onClear() {
-    super._onClear();
-  }
-}
+class HeadlessTextureData extends TextureData {}

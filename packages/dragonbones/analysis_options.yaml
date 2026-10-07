@@ -1,4 +1,15 @@
-# This runtime is a *faithful transcription* of the upstream DragonBones
+# Analysis options for the `dragonbones` runtime.
+#
+# `linter.rules` below is a copy of `package:lints/core.yaml` (v6.1.0), and that
+# is not an arbitrary choice: it is the exact rule set pub.dev's `pana` runs
+# when it scores the "Pass static analysis" section. `pana` loads
+# `package:lints/core.yaml` and merges it *on top of* the package's own options.
+# Mirroring it here means a clean `dart analyze` locally is the same clean run
+# pub.dev will see, instead of a surprise at publish time.
+#
+# Keep the list in sync when `package:lints` ships new core rules.
+#
+# The runtime is a *faithful transcription* of the upstream DragonBones
 # TypeScript (see docs/findings.mdx for why). Upstream deliberately keeps members
 # that a given milestone does not exercise yet — IK helpers, constraint hooks,
 # engine-side render hooks, blend-mode plumbing. In a transcription those read
@@ -14,3 +25,42 @@ analyzer:
     # prove them redundant: they document the upstream static type at the
     # transposition point and make the port easier to diff against .ref/.
     unnecessary_cast: ignore
+linter:
+  rules:
+    - avoid_empty_else
+    - avoid_relative_lib_imports
+    - avoid_shadowing_type_parameters
+    - avoid_types_as_parameter_names
+    - await_only_futures
+    - camel_case_extensions
+    - camel_case_types
+    - collection_methods_unrelated_type
+    - curly_braces_in_flow_control_structures
+    - dangling_library_doc_comments
+    - depend_on_referenced_packages
+    - empty_catches
+    - file_names
+    - hash_and_equals
+    - implicit_call_tearoffs
+    - library_annotations
+    - no_duplicate_case_values
+    - no_wildcard_variable_uses
+    - non_constant_identifier_names
+    - null_check_on_nullable_type_parameter
+    - prefer_generic_function_type_aliases
+    - prefer_is_empty
+    - prefer_is_not_empty
+    - prefer_iterable_whereType
+    - prefer_typing_uninitialized_variables
+    - provide_deprecation_message
+    - secure_pubspec_urls
+    - strict_top_level_inference
+    - type_literal_in_constant_pattern
+    - unintended_html_in_doc_comment
+    - unnecessary_overrides
+    - unrelated_type_equality_checks
+    - use_string_in_part_of_directives
+    - valid_regexps
+    - void_checks
+formatter:
+  page_width: 120
