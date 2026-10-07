@@ -24,8 +24,9 @@ void main() {
     // The sweep fixtures live in the repository, not in this package. Running the
     // package's tests standalone (unpacked from the pub cache, say) must skip
     // rather than fail.
-    test('Unity fixture sweep', () {}, skip: 'no fixtures at ../../test/fixtures/unity '
-        '— run tool/ground_truth/fetch_fixtures.sh from the repository');
+    test('Unity fixture sweep', () {},
+        skip: 'no fixtures at ../../test/fixtures/unity '
+            '— run tool/ground_truth/fetch_fixtures.sh from the repository');
     return;
   }
 
@@ -55,7 +56,8 @@ void main() {
       }
 
       final recorder = ui.PictureRecorder();
-      final canvas = ui.Canvas(recorder, const ui.Rect.fromLTWH(0, 0, 256, 256));
+      final canvas =
+          ui.Canvas(recorder, const ui.Rect.fromLTWH(0, 0, 256, 256));
 
       // A handful of frames: enough to move past the pose and exercise the
       // mesh/child paths without turning the sweep into a slow test.
@@ -81,11 +83,13 @@ void main() {
 
   test('the sweep actually covered meshes and nested armatures', () {
     expect(meshSlotsSeen, greaterThan(0),
-        reason: 'the set has mesh slots; if this is 0 the mesh path is untested');
+        reason:
+            'the set has mesh slots; if this is 0 the mesh path is untested');
     expect(assetsWithMeshes, greaterThan(0),
         reason: 'no asset reported a mesh slot');
     expect(assetsWithNestedArmatures, greaterThan(0),
-        reason: 'the set has nested armatures; if this is 0 that path is untested');
+        reason:
+            'the set has nested armatures; if this is 0 that path is untested');
   });
 }
 
@@ -142,7 +146,8 @@ List<_Fixture> _discoverFixtures() {
 
   final fixtures = <_Fixture>[];
   for (final skeleton in skeletons) {
-    final stem = skeleton.path.substring(0, skeleton.path.length - '_ske.json'.length);
+    final stem =
+        skeleton.path.substring(0, skeleton.path.length - '_ske.json'.length);
     final texture = File('${stem}_tex.json');
     if (!texture.existsSync()) continue;
 

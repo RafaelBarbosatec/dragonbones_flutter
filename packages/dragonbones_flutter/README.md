@@ -2,7 +2,7 @@
 
 [![pub package](https://img.shields.io/pub/v/dragonbones_flutter.svg)](https://pub.dev/packages/dragonbones_flutter)
 
-Draw [DragonBones](https://github.com/DragonBones/DragonBones](https://dragonbones.github.io/en/animation.html)) skeletal
+Draw [DragonBones](https://dragonbones.github.io/en/animation.html) skeletal
 animations on a Flutter `Canvas` — the free, MIT alternative to Spine and Rive.
 
 The runtime lives in [`dragonbones`](https://pub.dev/packages/dragonbones) (pure

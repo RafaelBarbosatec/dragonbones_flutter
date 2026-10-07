@@ -1,9 +1,6 @@
 name: dragonbones_flutter
-description: >-
-  Draw DragonBones skeletal animations on a Flutter Canvas. Framework-agnostic:
-  `update(dt)` + `render(Canvas)`, plus a ready-made widget. No game engine
-  dependency, so it drops into any Flutter project or game engine.
-version: 0.1.0
+description: 'Draw DragonBones skeletal animations on a Flutter Canvas: update(dt) + render(Canvas), plus a ready-made widget and no game engine dependency.'
+version: 0.1.1
 repository: https://github.com/RafaelBarbosatec/dragonbones_flutter
 documentation: https://docs.page/RafaelBarbosatec/dragonbones_flutter
 issue_tracker: https://github.com/RafaelBarbosatec/dragonbones_flutter/issues

@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.1
+
+Packaging and hygiene release after the first publish. No change to the drawing:
+the tests that replay every runtime fixture through the real renderer behave
+exactly as they did in 0.1.0.
+
+**pub.dev score fixes.** The 0.1.0 archive lost 30 of its 160 pub points, all of
+it recoverable:
+
+- `description` shortened from 216 to 142 characters. Pub.dev rejects anything
+  over 180, and that single field cost the whole 10-point "valid `pubspec.yaml`"
+  section.
+- Added `example/example.dart`, a small app that draws an armature with no asset
+  files at all — the skeleton and atlas are embedded and the raster is generated
+  in memory. That is the 10-point "package has an example" section, and it gives
+  `DragonBonesWidget` a copy-pasteable entry point.
+- `analysis_options.yaml` now also carries `package:lints/core.yaml`, the set
+  pub.dev's `pana` merges *over* a package's own options, plus
+  `formatter: page_width: 120`. Two rules existed on pub.dev's side and nowhere
+  on ours — `strict_top_level_inference` and `unintended_html_in_doc_comment`,
+  both newer than `flutter_lints` 4.x — so they were unreachable from CI. They
+  are checked now.
+- CI gates formatting, because pub.dev scores it.
+
+**Fixed:** the README's opening `DragonBones` link was malformed — a duplicated
+closing bracket made the destination a URL containing `](`. It rendered as
+broken text on the pub.dev page.
+
 ## 0.1.0
 
 First release. Draws DragonBones skeletal animations on a Flutter `Canvas`

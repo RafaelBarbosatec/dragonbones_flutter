@@ -36,7 +36,8 @@ void main() {
       player.update(1 / 24);
       player.render(canvas);
       framesDrawn++;
-      expect(player.drawList, isNotEmpty, reason: 'frame $i has nothing to draw');
+      expect(player.drawList, isNotEmpty,
+          reason: 'frame $i has nothing to draw');
     }
 
     recorder.endRecording().dispose();
@@ -118,7 +119,8 @@ Future<int> _countPaintedPixels(DragonBonesPlayer player, ui.Size size) async {
   const backgroundB = 0x30;
 
   final recorder = ui.PictureRecorder();
-  final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, size.width, size.height));
+  final canvas =
+      ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, size.width, size.height));
   canvas.drawRect(
     ui.Rect.fromLTWH(0, 0, size.width, size.height),
     ui.Paint()..color = background,
@@ -129,7 +131,8 @@ Future<int> _countPaintedPixels(DragonBonesPlayer player, ui.Size size) async {
     throw StateError('nothing to draw');
   }
 
-  final scale = math.min(size.width / bounds.width, size.height / bounds.height) * 0.9;
+  final scale =
+      math.min(size.width / bounds.width, size.height / bounds.height) * 0.9;
   player.render(
     canvas,
     scale: scale,
@@ -164,7 +167,8 @@ Future<int> _countPaintedPixels(DragonBonesPlayer player, ui.Size size) async {
 ///
 /// [local] reads the copy inside this package; otherwise the repository-level
 /// fixture directory is used, so the 1 MB 龙 atlas is not duplicated.
-Future<DragonBonesAssets> _loadFixture(String name, {bool local = false}) async {
+Future<DragonBonesAssets> _loadFixture(String name,
+    {bool local = false}) async {
   final directory = Directory(local ? 'test/fixtures' : '../../test/fixtures');
   final skeleton = File('${directory.path}/${name}_ske.json');
   if (!skeleton.existsSync()) {

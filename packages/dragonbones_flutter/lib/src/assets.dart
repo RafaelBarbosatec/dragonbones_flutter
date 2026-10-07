@@ -47,7 +47,8 @@ class DragonBonesAssets {
       throw ArgumentError('skeleton JSON could not be parsed');
     }
     final atlas = factory.parseTextureAtlasData(textureJson, null, data.name);
-    return DragonBonesAssets._(factory, data.name, <db.TextureAtlasData, ui.Image>{
+    return DragonBonesAssets._(
+        factory, data.name, <db.TextureAtlasData, ui.Image>{
       atlas: image,
     });
   }
@@ -85,7 +86,8 @@ class DragonBonesAssets {
 
   /// Decodes PNG/JPEG bytes into a [ui.Image].
   static Future<ui.Image> decodeImageData(ByteData data) async {
-    final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    final bytes =
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     return decodeImageBytes(bytes);
   }
 

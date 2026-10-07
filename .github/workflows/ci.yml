@@ -88,6 +88,12 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
+      # pub.dev scores formatting: pana runs `dart format --output=none
+      # --set-exit-if-changed` over the package with its own options file, into
+      # which it passes this package's `formatter:` section through — so the
+      # `page_width: 120` in analysis_options.yaml is what pub.dev uses too.
+      - name: Formatting (what pub.dev scores)
+        run: dart format --output=none --set-exit-if-changed .
       - run: flutter test --reporter expanded
       - name: Analyze the example app
         working-directory: example

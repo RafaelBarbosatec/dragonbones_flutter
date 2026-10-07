@@ -9,11 +9,11 @@ exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
 > **Status: 0.1.1 — feature-complete for the common case, not for everything.**
 > Both packages are on pub.dev:
-> [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime; `0.1.1` is
-> in this repository, pending release) and
+> [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer, `0.1.0`). See [Limitations](#limitations) for exactly what is missing
-> — it is a short, specific list, not a vague disclaimer.
+> renderer). Both are at `0.1.1` in this repository, pending release — see
+> [Limitations](#limitations) for exactly what is missing: a short, specific
+> list, not a vague disclaimer.
 
 ## The premise
 
@@ -321,13 +321,13 @@ pixels.
 
 ## Releases
 
-Both packages are on pub.dev. The runtime's `0.1.1` is prepared in this repository
-and waiting for its release commit; the CHANGELOG entry says what it fixes.
+Both packages are on pub.dev. `0.1.1` is prepared in this repository for each of
+them, waiting for its release commit; the CHANGELOG entries say what they fix.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
 | `dragonbones` | `0.1.0` | `0.1.1` |
-| `dragonbones_flutter` | `0.1.0` | `0.1.0` |
+| `dragonbones_flutter` | `0.1.0` | `0.1.1` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,

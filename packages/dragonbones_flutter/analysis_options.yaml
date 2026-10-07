@@ -1,1 +1,59 @@
+# Analysis options for the `dragonbones_flutter` renderer.
+#
+# Both halves below matter, and for different reasons:
+#
+# * `package:flutter_lints` is what `flutter analyze` uses here and in CI;
+# * the `linter.rules` list is a copy of `package:lints/core.yaml` (v6.1.0),
+#   which is what pub.dev's `pana` adds when it scores the package: it loads
+#   that file and merges it *over* the package's own options. A rule that
+#   pub.dev enables and this package does not is a rule CI can never catch —
+#   `strict_top_level_inference` and `unintended_html_in_doc_comment` were
+#   exactly that, because `flutter_lints` 4.x predates them.
+#
+# With both, a clean `flutter analyze` is the same clean run pub.dev sees.
+# Keep the list in sync when `package:lints` ships new core rules.
+#
+# Note there is deliberately no `formatter:` section here. Formatting is scored
+# too — pana runs `dart format` with this file's `formatter:` section passed
+# through — and these sources are formatted with the **default** width (80), so
+# declaring a width here would make pub.dev read them as unformatted. The runtime
+# package, which is 120 columns wide, declares its width for the same reason.
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - avoid_empty_else
+    - avoid_relative_lib_imports
+    - avoid_shadowing_type_parameters
+    - avoid_types_as_parameter_names
+    - await_only_futures
+    - camel_case_extensions
+    - camel_case_types
+    - collection_methods_unrelated_type
+    - curly_braces_in_flow_control_structures
+    - dangling_library_doc_comments
+    - depend_on_referenced_packages
+    - empty_catches
+    - file_names
+    - hash_and_equals
+    - implicit_call_tearoffs
+    - library_annotations
+    - no_duplicate_case_values
+    - no_wildcard_variable_uses
+    - non_constant_identifier_names
+    - null_check_on_nullable_type_parameter
+    - prefer_generic_function_type_aliases
+    - prefer_is_empty
+    - prefer_is_not_empty
+    - prefer_iterable_whereType
+    - prefer_typing_uninitialized_variables
+    - provide_deprecation_message
+    - secure_pubspec_urls
+    - strict_top_level_inference
+    - type_literal_in_constant_pattern
+    - unintended_html_in_doc_comment
+    - unnecessary_overrides
+    - unrelated_type_equality_checks
+    - use_string_in_part_of_directives
+    - valid_regexps
+    - void_checks
