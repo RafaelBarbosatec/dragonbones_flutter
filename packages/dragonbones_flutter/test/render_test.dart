@@ -110,6 +110,12 @@ void main() {
 /// from the background.
 Future<int> _countPaintedPixels(DragonBonesPlayer player, ui.Size size) async {
   const background = ui.Color(0xFF102030);
+  // `Color.red`/`green`/`blue` are deprecated (Flutter 3.41), and infos are
+  // fatal in `flutter analyze` — so compare the raw bytes against the literal
+  // channels of the background instead.
+  const backgroundR = 0x10;
+  const backgroundG = 0x20;
+  const backgroundB = 0x30;
 
   final recorder = ui.PictureRecorder();
   final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, size.width, size.height));
@@ -145,9 +151,9 @@ Future<int> _countPaintedPixels(DragonBonesPlayer player, ui.Size size) async {
 
   var painted = 0;
   for (var i = 0; i < data.lengthInBytes; i += 4) {
-    if (data.getUint8(i) != background.red ||
-        data.getUint8(i + 1) != background.green ||
-        data.getUint8(i + 2) != background.blue) {
+    if (data.getUint8(i) != backgroundR ||
+        data.getUint8(i + 1) != backgroundG ||
+        data.getUint8(i + 2) != backgroundB) {
       painted++;
     }
   }
