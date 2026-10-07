@@ -18,12 +18,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/Dragon_ske.json
-    - assets/Dragon_tex.json
-    - assets/Dragon_tex.png
-    # The 龙 fixture (deformable meshes + IK) also sits in assets/, but it is not
-    # listed here because the renderer cannot draw meshes yet. Add these two
-    # lines plus the PNG when mesh support lands:
-    #   - assets/龙_ske.json
-    #   - assets/龙_tex.json
-    #   - assets/龙_tex.png
+    - assets/dragon/
+    - assets/mecha_1004d/
+    - assets/mecha_1004d_show/

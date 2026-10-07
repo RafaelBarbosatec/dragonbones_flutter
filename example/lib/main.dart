@@ -37,22 +37,40 @@ class _DemoPageState extends State<DemoPage> {
   String? _animation;
   Object? _error;
 
+  final examples = {
+    'dragon': ('dragon', 'Dragon'),
+    'mecha_1004d_show': ('mecha_1004d_show', 'mecha_1004d'),
+    'mecha_1004d': ('mecha_1004d', 'mecha_1004d'),
+  };
+
+  String _selectedExample = 'mecha_1004d_show';
+
+  late (String, String) choice;
+
   @override
   void initState() {
     super.initState();
+    choice = examples[_selectedExample]!;
     _load();
   }
 
   Future<void> _load() async {
     try {
+      final example = examples[_selectedExample];
+      if (example == null) {
+        throw StateError('Example not found: $_selectedExample');
+      }
+
+      choice = example;
+
       final assets = await DragonBonesAssets.loadAsset(
         bundle: rootBundle,
-        skeleton: 'assets/Dragon_ske.json',
-        texture: 'assets/Dragon_tex.json',
-        image: 'assets/Dragon_tex.png',
+        skeleton: 'assets/${choice.$1}/ske.json',
+        texture: 'assets/${choice.$1}/tex.json',
+        image: 'assets/${choice.$1}/tex.png',
       );
 
-      final armature = assets.buildArmature('Dragon');
+      final armature = assets.buildArmature(choice.$2);
       if (armature == null) {
         throw StateError('armature "Dragon" not found in the asset');
       }
@@ -85,7 +103,12 @@ class _DemoPageState extends State<DemoPage> {
             child: Container(
               color: const Color(0xFF102030),
               child: _error != null
-                  ? Center(child: Text('$_error', textAlign: TextAlign.center))
+                  ? Center(
+                      child: Text(
+                      '$_error',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                    ))
                   : player == null
                       ? const Center(child: CircularProgressIndicator())
                       : DragonBonesWidget(
@@ -97,25 +120,64 @@ class _DemoPageState extends State<DemoPage> {
           ),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('Animation '),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButton<String>(
-                    isExpanded: true,
-                    value: _animation,
-                    items: <DropdownMenuItem<String>>[
-                      for (final name in _animations)
-                        DropdownMenuItem<String>(value: name, child: Text(name)),
-                    ],
-                    onChanged: _animations.isEmpty
-                        ? null
-                        : (String? value) {
-                            if (value == null || value == _animation) return;
-                            setState(() => _animation = value);
-                          },
-                  ),
+                Row(
+                  children: <Widget>[
+                    const Text('Exemplo '),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedExample,
+                        items: <DropdownMenuItem<String>>[
+                          for (final entry in examples.entries)
+                            DropdownMenuItem<String>(
+                              value: entry.key,
+                              child: Text(entry.key),
+                            ),
+                        ],
+                        onChanged: (String? value) {
+                          if (value == null || value == _selectedExample)
+                            return;
+                          setState(() {
+                            _selectedExample = value;
+                            _error = null;
+                            _player = null;
+                            _animations = const <String>[];
+                            _animation = null;
+                          });
+                          _load();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: <Widget>[
+                    const Text('Animation '),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _animation,
+                        items: <DropdownMenuItem<String>>[
+                          for (final name in _animations)
+                            DropdownMenuItem<String>(
+                                value: name, child: Text(name)),
+                        ],
+                        onChanged: _animations.isEmpty
+                            ? null
+                            : (String? value) {
+                                if (value == null || value == _animation)
+                                  return;
+                                setState(() => _animation = value);
+                              },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
