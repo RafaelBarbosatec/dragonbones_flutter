@@ -3,12 +3,12 @@ title: Publishing
 description: The exact release sequence for the two packages, and why the runtime has to go out first.
 ---
 
-Both packages are published on pub.dev:
+Both packages are on pub.dev:
 
-| Package | Version |
-| --- | --- |
-| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.1.0 |
-| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.1.0 |
+| Package | Published | In this repository |
+| --- | --- | --- |
+| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.1.0 | **0.1.1**, pending release |
+| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.1.0 | 0.1.0 |
 
 A pub.dev release cannot be deleted — only retracted — so the trigger is always a
 human decision, never a CI side effect. This page is the release sequence for the
@@ -81,6 +81,36 @@ flutter pub publish
 | `publish_to: none` removed | ✅ | ✅ |
 | `--dry-run` clean | ✅ gated in CI | ✅ |
 
+## What pub.dev actually scores
+
+Most of the score is easy to satisfy, but the traps are dull and specific — and
+`dragonbones` 0.1.0 lost 30 of its 160 points to three of them, so they are
+written down here:
+
+- **`description` must be 50-180 characters.** Over the limit fails the whole
+  10-point "valid `pubspec.yaml`" section, not just one line in the report. The
+  0.1.0 description was 182 characters.
+- **`publish_to: none` blocks repository verification.** pana clones the
+  `repository` URL and requires the pubspec it finds there to *not* carry
+  `publish_to`. That safety line costs those same 10 points, so it belongs in the
+  release commit — and comes back out if the package is unpublished again.
+- **The lint set is `package:lints/core.yaml`.** pana merges it *on top of* the
+  package's own options, so a package that includes nothing and enables no rules
+  looks perfectly clean under a local `dart analyze` and still collects dozens of
+  findings on pub.dev. `packages/dragonbones/analysis_options.yaml` mirrors the
+  scored set, which is why `use_string_in_part_of_directives` and friends are
+  listed there.
+- **Formatting is scored**, using the package's own `formatter:` section: pana
+  passes it through when it writes the options file it runs `dart format` with.
+  That is why `formatter: page_width: 120` lives in those options — the sources
+  are 120 columns wide, and without it pub.dev reads them as unformatted.
+- **An `example/` is worth 10 points on its own**, and it is the cheapest 10
+  points in the whole report: a file at `example/example.dart` is enough, and
+  pub.dev renders it on the package's Example tab.
+
+CI gates the two that are checkable offline: `dart analyze` and
+`dart format --output=none --set-exit-if-changed`.
+
 ## Name availability
 
 `dragonbones` and `dragonbones_flutter` are the names this project publishes
@@ -94,7 +124,9 @@ named independently.
 (`check_against_oracle.dart`, `parse_check.dart`, `inspect_fixture.dart`) read the
 reference dumps and fixtures from the repository root, which is outside the
 package — shipping them would ship something that cannot run. They live in the
-repository, where they work.
+repository, where they work. The `example/` directory **is** shipped, on purpose:
+pub.dev scores it, and `dart run example/example.dart` works from the published
+package.
 
 ## Before a 1.0
 

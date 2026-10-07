@@ -15,6 +15,16 @@ dependencies:
 This brings in [`dragonbones`](https://pub.dev/packages/dragonbones), the
 runtime, transitively — you only add the renderer.
 
+Using the runtime on its own — no Flutter, no GPU, no game engine — is a direct
+dependency:
+
+```yaml
+dependencies:
+  dragonbones: ^0.1.0
+```
+
+Its `example/example.dart` runs it end to end on a bare Dart SDK.
+
 `dragonbones_flutter` re-exports the whole runtime, so you only need this one
 import:
 

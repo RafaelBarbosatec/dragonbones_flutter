@@ -7,12 +7,13 @@
 Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
 exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
-> **Status: 0.1.0 — feature-complete for the common case, not for everything.**
-> Both packages are published on pub.dev:
-> [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
+> **Status: 0.1.1 — feature-complete for the common case, not for everything.**
+> Both packages are on pub.dev:
+> [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime; `0.1.1` is
+> in this repository, pending release) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). See [Limitations](#limitations) for exactly what is missing — it is
-> a short, specific list, not a vague disclaimer.
+> renderer, `0.1.0`). See [Limitations](#limitations) for exactly what is missing
+> — it is a short, specific list, not a vague disclaimer.
 
 ## The premise
 
@@ -183,7 +184,7 @@ Notably, `you_xin/body` alone is 71 frames, 70 bones, 6,816 slot draw data and
 
 ## Limitations
 
-The honest list, for 0.1.0. Everything here is *parsed* but not *evaluated* —
+The honest list, for 0.1.1. Everything here is *parsed* but not *evaluated* —
 which means a file using it will load and mostly animate, then be subtly wrong
 rather than crash loudly. That is the dangerous kind, so it is spelled out.
 
@@ -303,9 +304,15 @@ Step 4 replays every asset frame by frame and diffs it against the official
 runtime. It exits non-zero on the first asset that drifts, or is missing a dump,
 and prints one line per asset so a slow one never looks like a hang.
 
-CI (`.github/workflows/ci.yml`) runs four jobs on every push: the dumps must be
-**reproducible** from the official runtime, the runtime is analysed and diffed,
-and the renderer plus the example app are analysed and tested under Flutter.
+CI (`.github/workflows/ci.yml`) runs five jobs on every push: the dumps must be
+**reproducible** from the official runtime; the runtime is analysed,
+formatting-checked and diffed; the renderer plus the example app are analysed and
+tested under Flutter; and the documentation site is checked by the docs.page CLI.
+
+The formatting and lint gates are not decoration: pub.dev scores both, and the
+rule set it uses is `package:lints/core.yaml`, not `package:lints/recommended`.
+`packages/dragonbones/analysis_options.yaml` mirrors the scored set exactly, so a
+clean local `dart analyze` is the same clean run pub.dev sees.
 
 The atlas **images** are fetched, not vendored: the geometry oracle reads regions
 and names out of the texture JSON and never opens the PNGs, so the 11 MB of
@@ -314,12 +321,13 @@ pixels.
 
 ## Releases
 
-Both packages are published on pub.dev at `0.1.0`:
+Both packages are on pub.dev. The runtime's `0.1.1` is prepared in this repository
+and waiting for its release commit; the CHANGELOG entry says what it fixes.
 
-| Package | pub.dev |
-| --- | --- |
-| `dragonbones` | <https://pub.dev/packages/dragonbones> |
-| `dragonbones_flutter` | <https://pub.dev/packages/dragonbones_flutter> |
+| Package | Published | In this repository |
+| --- | --- | --- |
+| `dragonbones` | `0.1.0` | `0.1.1` |
+| `dragonbones_flutter` | `0.1.0` | `0.1.0` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,
