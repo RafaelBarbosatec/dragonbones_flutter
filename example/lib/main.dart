@@ -41,6 +41,7 @@ class _DemoPageState extends State<DemoPage> {
     'dragon': ('dragon', 'Dragon'),
     'mecha_1004d_show': ('mecha_1004d_show', 'mecha_1004d'),
     'mecha_1004d': ('mecha_1004d', 'mecha_1004d'),
+    'mecha_1502b': ('mecha_1502b', 'mecha_1502b'),
     '龙': ('龙', 'armatureName'),
   };
 
