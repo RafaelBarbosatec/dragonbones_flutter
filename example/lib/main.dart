@@ -41,6 +41,7 @@ class _DemoPageState extends State<DemoPage> {
     'dragon': ('dragon', 'Dragon'),
     'mecha_1004d_show': ('mecha_1004d_show', 'mecha_1004d'),
     'mecha_1004d': ('mecha_1004d', 'mecha_1004d'),
+    '龙': ('龙', 'armatureName'),
   };
 
   String _selectedExample = 'mecha_1004d_show';
@@ -139,8 +140,9 @@ class _DemoPageState extends State<DemoPage> {
                             ),
                         ],
                         onChanged: (String? value) {
-                          if (value == null || value == _selectedExample)
+                          if (value == null || value == _selectedExample) {
                             return;
+                          }
                           setState(() {
                             _selectedExample = value;
                             _error = null;
@@ -171,8 +173,9 @@ class _DemoPageState extends State<DemoPage> {
                         onChanged: _animations.isEmpty
                             ? null
                             : (String? value) {
-                                if (value == null || value == _animation)
+                                if (value == null || value == _animation) {
                                   return;
+                                }
                                 setState(() => _animation = value);
                               },
                       ),
