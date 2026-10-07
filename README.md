@@ -9,9 +9,11 @@ Skeletal (bone-based) animation for **Dart**, **Flutter**, **Flame** and
 alternative to Spine and Rive.
 
 > **Status: 0.1.0 — feature-complete for the common case, not for everything.**
-> Both packages are publishable (`--dry-run` clean) but deliberately
-> unpublished. See [Limitations](#limitations) for exactly what is missing —
-> it is a short, specific list, not a vague disclaimer.
+> Neither package is on pub.dev, deliberately. The runtime's publish dry-run is
+> clean; the renderer cannot even be dry-run until the runtime ships, because
+> `pub publish` rejects its `path:` dependency. See
+> [Limitations](#limitations) for exactly what is missing — it is a short,
+> specific list, not a vague disclaimer.
 
 DragonBones is a 2D skeletal animation tool whose runtimes are MIT and exist
 officially for TypeScript/JS, C++, C#, Java, Haxe and ActionScript — but **never
