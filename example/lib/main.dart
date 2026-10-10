@@ -3,6 +3,7 @@
 // The character list comes from `asset_catalog.dart`, generated from the
 // directories under `assets/` — every character in the repository's fixture
 // set, so the app doubles as a viewer for all of them. See example/README.md.
+import 'package:dragonbones_example/game/game.dart';
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
@@ -137,6 +138,15 @@ class _DemoPageState extends State<DemoPage> {
       appBar: AppBar(
         title: const Text('DragonBones on a Flutter Canvas'),
         actions: <Widget>[
+          IconButton(
+            tooltip: 'Bonfire platformer (keyboard + on-screen controls)',
+            icon: const Icon(Icons.sports_esports),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const GameExample(),
+              ),
+            ),
+          ),
           IconButton(
             tooltip: 'Head follows the pointer (mouse / touch)',
             icon: const Icon(Icons.mouse),
