@@ -81,7 +81,6 @@ class _GameExampleState extends State<GameExample> {
         ],
         cameraConfig: CameraConfig(
           initialMapZoomFit: InitialMapZoomFitEnum.fitHeight,
-          moveOnlyMapArea: true,
         ),
       ),
     );
