@@ -184,15 +184,64 @@ class DragonBones {
   static bool debugDraw = false;
 
   final WorldClock _clock = WorldClock();
+  final List<EventObject> _events = <EventObject>[];
   final List<Object> _objects = <Object>[];
+  IEventDispatcher? _eventManager;
+
+  /// [eventManager] receives *global* events — in practice only
+  /// [EventObject.SOUND_EVENT], because audio belongs to the application rather
+  /// than to one armature.
+  ///
+  /// Upstream makes the argument required. Here it is optional, so a headless
+  /// consumer that only cares about frame events can leave it out and still get
+  /// every other event through the armature's own proxy.
+  DragonBones([this._eventManager]);
 
   WorldClock get clock => _clock;
+
+  IEventDispatcher? get eventManager => _eventManager;
 
   void advanceTime(double passedTime) {
     if (_objects.isNotEmpty) {
       _objects.clear();
     }
+
     _clock.advanceTime(passedTime);
+
+    // Events are dispatched *after* the clock, never during it: a listener is
+    // free to play an animation or dispose a child without mutating the
+    // timeline that is still being walked.
+    if (_events.isNotEmpty) {
+      for (var i = 0; i < _events.length; ++i) {
+        final eventObject = _events[i];
+        final armature = eventObject.armature;
+
+        if (armature != null && armature._armatureData != null) {
+          // May be armature disposed before advanceTime.
+          armature.eventDispatcher.dispatchDBEvent(eventObject.type, eventObject);
+
+          if (eventObject.type == EventObject.SOUND_EVENT) {
+            _eventManager?.dispatchDBEvent(eventObject.type, eventObject);
+          }
+        }
+
+        bufferObject(eventObject);
+      }
+
+      _events.clear();
+    }
+  }
+
+  /// - Queues [value] for dispatch at the end of the current [advanceTime].
+  ///
+  /// Note this is driven by *this* hub: an armature advanced directly through
+  /// [Armature.advanceTime], bypassing the clock, buffers events that nobody
+  /// will flush. Attach the armature to [clock] and advance this object, the
+  /// way an engine binding does.
+  void bufferEvent(EventObject value) {
+    if (!_events.contains(value)) {
+      _events.add(value);
+    }
   }
 
   void bufferObject(BaseObject object) {
@@ -202,12 +251,16 @@ class DragonBones {
   }
 }
 
-/// Minimal clock. The oracle harness advances the armature directly, so the
-/// clock only needs to exist for API compatibility.
+/// - The clock every armature of a hub is attached to, ported from
+/// `.ref/dragonBones-ts/animation/WorldClock.ts`.
 ///
-/// Faithful port of `.ref/dragonBones-ts/animation/WorldClock.ts` (the
-/// clock-attached objects are advanced like upstream, though nothing attaches
-/// to it in the headless harness).
+/// The list handling here is load-bearing, not bookkeeping. `remove` blanks an
+/// entry instead of shifting the list, and [advanceTime] compacts it in place
+/// while walking. That is because an armature can be disposed *during* the walk:
+/// a `displayFrame` timeline that swaps a slot to a different child armature
+/// drops the previous one, and its `_onClear` detaches it from this very clock.
+/// A plain `removeAt` would shift the list under the running loop and walk off
+/// the end.
 abstract class IAnimatable {
   void advanceTime(double passedTime);
   WorldClock? get clock;
@@ -218,7 +271,7 @@ class WorldClock {
   double time;
   double timeScale = 1.0;
 
-  final List<IAnimatable> _animatebles = <IAnimatable>[];
+  final List<IAnimatable?> _animatebles = <IAnimatable?>[];
 
   WorldClock([this.time = 0.0]);
 
@@ -238,22 +291,73 @@ class WorldClock {
       time += passedTime;
     }
 
-    for (var i = 0, l = _animatebles.length; i < l; ++i) {
-      final animateble = _animatebles[i];
-      animateble.advanceTime(passedTime);
+    // `l` is captured once; a disposal during the walk blanks an entry but never
+    // changes the length, and `r` carries the gap left behind so entries can be
+    // shifted down behind it.
+    var i = 0, r = 0;
+    var l = _animatebles.length;
+
+    for (; i < l; ++i) {
+      final animatable = _animatebles[i];
+
+      if (animatable != null) {
+        if (r > 0) {
+          _animatebles[i - r] = animatable;
+          _animatebles[i] = null;
+        }
+
+        animatable.advanceTime(passedTime);
+      } else {
+        r++;
+      }
+    }
+
+    // Anything appended by the walk itself (a nested armature built during an
+    // update) was not covered by the captured length, so it is compacted here.
+    if (r > 0) {
+      l = _animatebles.length;
+
+      for (; i < l; ++i) {
+        final animatable = _animatebles[i];
+
+        if (animatable != null) {
+          _animatebles[i - r] = animatable;
+        } else {
+          r++;
+        }
+      }
+
+      _animatebles.length -= r;
     }
   }
 
   void add(IAnimatable value) {
     if (_animatebles.indexOf(value) < 0) {
       _animatebles.add(value);
+      // Upstream sets this too, and the armature relies on it: a nested
+      // armature inherits its parent's clock through `Slot._updateDisplay`.
+      value.clock = this;
     }
   }
 
   void remove(IAnimatable value) {
     final index = _animatebles.indexOf(value);
+
     if (index >= 0) {
-      _animatebles.removeAt(index);
+      // Blank, do not shift — and blank *before* clearing the back-reference,
+      // which re-enters this method through the `clock` setter. The second
+      // entry finds nothing (indexOf is now -1) and stops.
+      _animatebles[index] = null;
+      value.clock = null;
+    }
+  }
+
+  /// - Detaches every instance, without touching the list.
+  void clear() {
+    for (final animatable in _animatebles) {
+      if (animatable != null) {
+        animatable.clock = null;
+      }
     }
   }
 }

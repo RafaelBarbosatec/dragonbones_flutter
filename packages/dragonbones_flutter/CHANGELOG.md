@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0
+
+**Animation events reach the player.** `dragonbones` gained a full event system
+(see its changelog); this release wires it up, so a Flutter app can react to a
+footstep or to an animation finishing.
+
+```dart
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.COMPLETE,
+  (event) => setState(() => _state = 'idle'),
+);
+```
+
+- `DragonBonesPlayer.update` now advances the **hub** (`DragonBones.advanceTime`)
+  rather than the armature. That is what makes buffered events dispatch, and it
+  is what the official bindings do. Behaviour is unchanged for a non-zero step;
+  a zero step (`update(0)`, used to recompute the pose without advancing time)
+  still takes the direct path, because the hub's clock ignores a zero step.
+- The headless display behind `DragonBonesAssets` now carries a real dispatcher,
+  so `player.armature.eventDispatcher` works with no Flutter binding involved.
+- A `soundEvent` is delivered twice — once on the armature and once on the hub's
+  `eventManager`. Hook audio in **one** of the two.
+
+Requires `dragonbones: ^0.2.0`.
+
+Also in this release: the arms of the 46 bundled example characters are wired to
+the events, and `update(0)` is covered by a test.
+
 ## 0.1.1
 
 Packaging and hygiene release after the first publish. No change to the drawing:

@@ -26,6 +26,7 @@ import 'dart:typed_data';
 
 part 'src/core/base_object.dart';
 part 'src/core/dragon_bones.dart';
+part 'src/event/event_object.dart';
 part 'src/geom/point.dart';
 part 'src/geom/rectangle.dart';
 part 'src/geom/color_transform.dart';

@@ -485,7 +485,16 @@ abstract class Slot extends TransformObject {
                 : null;
 
             if (actions != null && actions.isNotEmpty) {
-              // Milestone 2: buffering child armature actions is not ported.
+              // The child armature names its own start-up animation, so it is
+              // *not* played here. Each action goes into the parent's queue and
+              // is dispatched (and faded in) at the end of its advanceTime —
+              // upstream does the same, so a listener can still override it.
+              for (final action in actions) {
+                final eventObject = EventObject();
+                EventObject.actionDataToInstance(action, eventObject, this._armature!);
+                eventObject.slot = this;
+                this._armature!._bufferAction(eventObject, false);
+              }
             } else {
               this._childArmature!.animation.play();
             }

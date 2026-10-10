@@ -117,12 +117,30 @@ quietly rot.
 pixels, which catches "wired wrong and drew nothing" — not "drew it wrong".
 Eyeballs are still required for that.
 
+## Animation events
+
+The runtime reports what happens on the timeline — a footstep the animator
+placed, or simply that an animation ended — and this package wires that through,
+so a widget can react:
+
+```dart
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.COMPLETE,
+  (event) => setState(() => _state = 'idle'),
+);
+```
+
+`FRAME_EVENT` and `SOUND_EVENT` come from the timeline; `START`,
+`LOOP_COMPLETE`, `COMPLETE`, `FADE_IN` / `FADE_OUT` and their `...Complete`
+counterparts come from the animation itself. They arrive **after** the frame is
+posed, so a listener may play another animation. A `soundEvent` is delivered
+twice — once on the armature and once on the hub's `eventManager` — so hook audio
+in one place only. The runtime never plays audio; it reports names.
+
 ## Known limitations
 
 Inherited from the runtime (the renderer cannot draw what is not evaluated):
 
-- **No animation events** (`EventObject`), so no callbacks driven from the
-  animation.
 - **Animated IK is ignored** — static IK works.
 - **`SlotZIndex` and `SlotAlpha` / `BoneAlpha` timelines** are not evaluated, so
   animated draw order and per-slot fade will be wrong.

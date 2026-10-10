@@ -1,5 +1,87 @@
 # Changelog
 
+## 0.2.0
+
+**Animation events.** The runtime no longer only *draws* an animation — it
+reports what happens on the timeline, in the order the official runtime reports
+it. This was the last gap that broke a game rather than merely limiting it: with
+no events there is no way to play a footstep, spawn a projectile or open a
+hitbox on a specific frame, and no way to know an animation finished.
+
+```dart
+armature.eventDispatcher.addDBEventListener(EventObject.COMPLETE, (event) {
+  print('${event.animationState!.name} finished');
+});
+```
+
+- **`EventObject`** and a full **`IEventDispatcher`**, ported from upstream. The
+  dispatcher is the *binding's* to implement, exactly as upstream intends:
+  `IArmatureProxy` now extends `IEventDispatcher` (see *Breaking* below).
+- **Frame events and sound events** (`"events"` / `"sound"` on a timeline frame),
+  including whatever the animator attached — `actionData`, and the `ints` /
+  `floats` / `strings` of its `UserData`.
+- **Lifecycle events**: `start`, `loopComplete`, `complete`, `fadeIn`,
+  `fadeOut`, `fadeInComplete`, `fadeOutComplete`.
+- **`gotoAndPlay` actions** are queued on the armature and run after the pose is
+  settled, so a nested armature can be started from its own display data — and
+  so a listener may safely play another animation from inside a callback.
+- **Events are dispatched after the frame is advanced**, never during it
+  (`DragonBones.bufferEvent` → dispatched at the end of `DragonBones.advanceTime`).
+- **Child-armature propagation**: playing an animation on a parent now plays the
+  same-named animation on every nested child that declares one. This was ported
+  as "milestone 2" and had been skipped; without it a composite character (a body
+  plus its equipment) would only partly change pose.
+- A `soundEvent` is delivered twice — once on the armature and once on
+  `DragonBones.eventManager`. That is upstream behaviour, not duplication: audio
+  belongs to the application.
+- **Listening to nothing costs nothing**: as upstream, an event is only built
+  when `hasDBEventListener` reports a listener.
+
+**Fixed: a crash when a `displayFrame` timeline swaps a child armature.** The
+port's `WorldClock.remove` shrank the list, and `advanceTime` walked it with a
+length captured up front — so disposing an armature *during* the walk (which is
+exactly what swapping a slot's nested armature does) shifted the list under the
+loop and walked off the end. Upstream blanks the entry and compacts in place,
+and that is now what this port does. `mecha_1004d`, whose `attack_01` /
+`skill_01` / `skill_03` swap a weapon armature mid-animation, is the fixture that
+catches it. (Not new in 0.2.0 — the bug was latent, and only a test that
+exercises actions could find it.)
+
+**Breaking**, all of it to match upstream's shape:
+
+- `IArmatureProxy` now `implements IEventDispatcher`, so a custom proxy must also
+  provide `hasDBEventListener`, `addDBEventListener`, `removeDBEventListener` and
+  `dispatchDBEvent`. `addDBEventListener` takes `void Function(EventObject)`
+  (upstream's `(listener, thisObject)` pair is dropped — Dart closures capture
+  their own context).
+- `Armature.eventDispatcher` returns the proxy, as before, but is now useful.
+- The `DragonBones` hub constructor takes an optional `eventManager`. Upstream
+  requires it; here it is optional so a headless consumer that only wants frame
+  events can omit it.
+
+**Also:**
+
+- `HeadlessFactory` accepts an optional `proxyFactory`, to observe or route the
+  events of every armature it builds — including nested children, which are built
+  mid-update.
+- `HeadlessArmatureDisplay` now carries a working dispatcher, so the headless
+  factory is a complete binding for logic, not just geometry.
+- `Armature.dragonBones` exposes the hub, so a binding can advance the clock
+  instead of the armature (which is what makes events dispatch).
+- `WorldClock` gained upstream's `clear()`, and `add` now sets `value.clock`
+  (upstream does; the port relied on callers to do it).
+
+Verification: the new `tool/check_events_against_oracle.dart` replays every
+fixture twice (`playTimes: 1` and `2`) and compares the **event sequence** —
+frame, type, name, time, armature, animation state, bone, slot — against the
+official runtime. **47 fixtures, 174 scenarios, 1,919 events, 0 mismatches.** The
+pose oracle is unchanged and still passes (757,701 comparisons).
+
+That harness also had to be fixed before it could exist: it fed the reference
+runtime JSON parsed in a *different* `vm` realm, and the official parser tests
+`rawData instanceof Array` in `_parseActionData` — which is false across realms,
+so every action had been silently dropped. See `tool/ground_truth/dump_events.js`.
+
 ## 0.1.1
 
 Packaging and hygiene release after the first publish. No change to the

@@ -40,8 +40,24 @@ class HeadlessSlot extends Slot {
 }
 
 /// Minimal [IArmatureProxy] with no rendering attached.
+///
+/// It does carry a *working* event dispatcher, though — that is what makes the
+/// headless factory a complete binding for logic, not just for geometry.
+/// Servers, tools and tests get exactly the events a renderer would:
+///
+/// ```dart
+/// armature.eventDispatcher.addDBEventListener(EventObject.COMPLETE, (event) {
+///   print('${event.animationState!.name} finished');
+/// });
+/// ```
+///
+/// Registering a listener also flips [hasDBEventListener], and the runtime uses
+/// that to skip allocating events nobody wants — so listening to nothing costs
+/// nothing.
 class HeadlessArmatureDisplay implements IArmatureProxy {
   Armature? _armature;
+
+  final Map<String, List<void Function(EventObject)>> _listeners = <String, List<void Function(EventObject)>>{};
 
   @override
   void dbInit(Armature armature) {
@@ -57,7 +73,31 @@ class HeadlessArmatureDisplay implements IArmatureProxy {
   void dbUpdate() {}
 
   @override
-  bool hasDBEventListener(String type) => false;
+  bool hasDBEventListener(String type) => this._listeners[type]?.isNotEmpty ?? false;
+
+  @override
+  void addDBEventListener(String type, void Function(EventObject event) listener) {
+    (this._listeners[type] ??= <void Function(EventObject)>[]).add(listener);
+  }
+
+  @override
+  void removeDBEventListener(String type, void Function(EventObject event) listener) {
+    this._listeners[type]?.remove(listener);
+  }
+
+  @override
+  void dispatchDBEvent(String type, EventObject eventObject) {
+    final listeners = this._listeners[type];
+    if (listeners == null) {
+      return;
+    }
+
+    // Iterate over a copy: a listener is allowed to remove itself (or another)
+    // while the event is being delivered.
+    for (final listener in List<void Function(EventObject)>.of(listeners)) {
+      listener(eventObject);
+    }
+  }
 
   @override
   Armature get armature => this._armature!;
@@ -78,9 +118,20 @@ class HeadlessArmatureDisplay implements IArmatureProxy {
 /// armature.advanceTime(1 / 24);
 /// ```
 class HeadlessFactory extends BaseFactory {
-  HeadlessFactory([super.dataParser]) {
+  /// [proxyFactory] builds the [IArmatureProxy] for every armature this factory
+  /// creates — including nested child armatures, which are built during an
+  /// update.
+  ///
+  /// Supply it to observe or route events from *all* of them at once. The proxy
+  /// doubles as the armature's display object, so it must implement
+  /// [IArmatureProxy] and nothing else is required of it (headless renders
+  /// nothing). Defaults to a fresh [HeadlessArmatureDisplay].
+  HeadlessFactory([super.dataParser, this.proxyFactory]) {
     this.dragonBones = DragonBones();
   }
+
+  /// Builds the proxy for each armature, or null to use [HeadlessArmatureDisplay].
+  final IArmatureProxy Function()? proxyFactory;
 
   @override
   bool _isSupportMesh() => true;
@@ -96,8 +147,12 @@ class HeadlessFactory extends BaseFactory {
   @override
   Armature _buildArmature(BuildArmaturePackage dataPackage) {
     final armature = Armature();
-    final display = HeadlessArmatureDisplay();
+    final display = this.proxyFactory?.call() ?? HeadlessArmatureDisplay();
     armature.init(dataPackage.armature!, display, display, this.dragonBones);
+    // Register with the hub's clock, the way the official engine bindings do
+    // (`EgretFactory` calls `_dragonBones.clock.add(armature)`), so that
+    // advancing the hub advances this armature *and* flushes its events.
+    this.dragonBones.clock.add(armature);
     return armature;
   }
 
