@@ -141,7 +141,6 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
 
   @override
   void render(Canvas canvas) {
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.x, size.y), paint);
     _player.render(canvas);
     super.render(canvas);
   }

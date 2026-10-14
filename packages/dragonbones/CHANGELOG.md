@@ -1,6 +1,6 @@
 # Changelog
 
-## [NEXT]
+## 0.3.0
 
 **`SlotAlpha` / `BoneAlpha` timelines.** The alpha timelines from the newer
 `timeline` array format now reach the armature: `SlotAlpha` fades a slot, and

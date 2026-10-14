@@ -11,8 +11,8 @@ exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 > not for everything.** Both packages are on pub.dev:
 > [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). The renderer's `0.3.0` is in this repository, waiting for its
-> release commit — see [Limitations](#limitations) for exactly what is missing: a
+> renderer). Both are at `0.3.0` in this repository, waiting for their release
+> commits — see [Limitations](#limitations) for exactly what is missing: a
 > short, specific list, not a vague disclaimer.
 
 ## The premise
@@ -347,13 +347,13 @@ atlas's `SubTexture` regions verified against the real PNG
 
 ## Releases
 
-Both packages are on pub.dev. `dragonbones_flutter` `0.3.0` is prepared in this
-repository, waiting for its release commit; its CHANGELOG entry says what it
-adds. The runtime is unchanged since its `0.2.0` release.
+Both packages are on pub.dev. `0.3.0` is prepared in this repository for each of
+them, waiting for its release commit; the CHANGELOG entries say what they add.
+Publish the runtime first — the renderer's `0.3.0` depends on it.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| `dragonbones` | `0.2.0` | `0.2.0` |
+| `dragonbones` | `0.2.0` | `0.3.0` |
 | `dragonbones_flutter` | `0.2.0` | `0.3.0` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
