@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0
+## [NEXT]
 
 **Placement is now the player's job.** `DragonBonesPlayer.fit` writes
 `scale`/`offset` from the box you render into, so a Flame/Bonfire component no

@@ -49,19 +49,28 @@ runtime, let the pub.dev index catch up, then publish the renderer.
   locally with the new range *after* step 1, before running step 2.
 </Warning>
 
+## Changelog convention
+
+Unreleased work goes under a `## [NEXT]` heading at the top of each
+`CHANGELOG.md`, **never** under the version already on pub.dev. At release, the
+`[NEXT]` heading is renamed to the version number — so a published version is
+never credited with work that shipped after it. `pubspec.yaml` carries the
+version being prepared; the changelog only gets the number at release time.
+
 ## Steps
 
 ```bash
 # 1. runtime first
 cd packages/dragonbones
 #    - bump `version:` in pubspec.yaml
-#    - add the new version to CHANGELOG.md
+#    - rename `## [NEXT]` to that version in CHANGELOG.md
 dart pub publish --dry-run     # must be clean before the real thing
 dart pub publish               # <- irreversible
 
 # 2. then the renderer
 cd ../dragonbones_flutter
-#    - bump `version:` and add it to CHANGELOG.md
+#    - bump `version:` in pubspec.yaml
+#    - rename `## [NEXT]` to that version in CHANGELOG.md
 #    - raise the dependency on the new runtime:
 #         dragonbones: ^0.2.0
 flutter pub get && flutter test
