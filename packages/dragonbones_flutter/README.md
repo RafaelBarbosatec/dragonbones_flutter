@@ -38,7 +38,7 @@ which is also why every number it draws can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.1.0
+  dragonbones_flutter: ^0.3.0
 ```
 
 This pulls in [`dragonbones`](https://pub.dev/packages/dragonbones), the runtime,
@@ -74,10 +74,12 @@ DragonBonesWidget(
 )
 ```
 
-`DragonBonesFit` handles placement (`none`, or `contain` which scales and centres
-the pose in the box), and the `computeBounds()` extension gives you the
-skeleton's bounds for placement and hitboxes. For your own placement, set
-`player.scale` and `player.offset`, or pass them per call to `render()`.
+`fit` handles placement: `player.fit(size: size, fit: DragonBonesFit.contain,
+align: Alignment.topLeft)` measures the pose and writes `scale`/`offset`, so an
+engine component only has to pass its box. The modes are `contain`, `cover`,
+`fitWidth`, `fitHeight` and `none`, and `computeBounds()` gives you the pose's
+bounds for hitboxes. For a fully manual placement, set `player.scale` and
+`player.offset`, or pass them per call to `render()`.
 
 ## What it draws
 

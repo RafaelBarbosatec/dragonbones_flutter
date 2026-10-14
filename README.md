@@ -7,13 +7,13 @@
 Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
 exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
-> **Status: 0.1.1 — feature-complete for the common case, not for everything.**
-> Both packages are on pub.dev:
+> **Status: 0.2.0 released, 0.3.0 pending — feature-complete for the common case,
+> not for everything.** Both packages are on pub.dev:
 > [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). Both are at `0.1.1` in this repository, pending release — see
-> [Limitations](#limitations) for exactly what is missing: a short, specific
-> list, not a vague disclaimer.
+> renderer). The renderer's `0.3.0` is in this repository, waiting for its
+> release commit — see [Limitations](#limitations) for exactly what is missing: a
+> short, specific list, not a vague disclaimer.
 
 ## The premise
 
@@ -54,6 +54,9 @@ player.update(dt);     // advance the animation
 player.render(canvas); // draw the pose
 ```
 
+Placement is the only extra: `player.fit(size: ..., align: ...)` measures the
+pose and writes `scale`/`offset`, so an engine component never has to.
+
 | Where you are | How you use it |
 | --- | --- |
 | Plain Flutter app | `DragonBonesWidget`, or your own `CustomPainter` |
@@ -68,7 +71,7 @@ That is also why the geometry can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.1.0
+  dragonbones_flutter: ^0.3.0
 ```
 
 ```dart
@@ -89,6 +92,13 @@ Then, once per frame:
 ```dart
 player.update(dt);
 player.render(canvas);
+```
+
+In a game engine, let the player place itself inside the component's box instead
+of hand-computing `scale` and `offset`:
+
+```dart
+player.fit(size: size, fit: DragonBonesFit.contain, align: Alignment.topLeft);
 ```
 
 Or skip the wiring entirely:
@@ -184,7 +194,7 @@ Notably, `you_xin/body` alone is 71 frames, 70 bones, 6,816 slot draw data and
 
 ## Limitations
 
-The honest list, for 0.1.1. Everything here is *parsed* but not *evaluated* —
+The honest list, for 0.3.0. Everything here is *parsed* but not *evaluated* —
 which means a file using it will load and mostly animate, then be subtly wrong
 rather than crash loudly. That is the dangerous kind, so it is spelled out.
 
@@ -327,13 +337,14 @@ atlas's `SubTexture` regions verified against the real PNG
 
 ## Releases
 
-Both packages are on pub.dev. `0.1.1` is prepared in this repository for each of
-them, waiting for its release commit; the CHANGELOG entries say what they fix.
+Both packages are on pub.dev. `dragonbones_flutter` `0.3.0` is prepared in this
+repository, waiting for its release commit; its CHANGELOG entry says what it
+adds. The runtime is unchanged since its `0.2.0` release.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| `dragonbones` | `0.1.0` | `0.1.1` |
-| `dragonbones_flutter` | `0.1.0` | `0.1.1` |
+| `dragonbones` | `0.2.0` | `0.2.0` |
+| `dragonbones_flutter` | `0.2.0` | `0.3.0` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,

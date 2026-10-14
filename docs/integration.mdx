@@ -53,14 +53,32 @@ class DragonBonesComponent extends YourEngineComponent {
 }
 ```
 
+Placement is the one thing the engine cannot guess: it knows the box the
+component occupies, not where the armature's art sits inside it. Hand that to
+`fit` in the component's load hook:
+
+```dart
+@override
+Future<void> onLoad() async {
+  player
+    ..play('idle')
+    ..update(0)                     // pose the first frame before measuring
+    ..fit(
+      size: Size(size.x, size.y),   // the component box
+      fit: DragonBonesFit.contain,
+      align: Alignment.bottomCenter, // feet on the component position
+    );
+}
+```
+
 Two things worth knowing:
 
 - **Size the component to the animation**, or hitboxes and camera culling will
   be wrong. `player.computeBounds()` gives you the current pose's bounds; for a
   static size, use the bounds at the first frame, or the armature's own extent.
-- **Anchor.** By default the armature is drawn from its origin. Use
-  `player.offset` to shift it so the character's feet sit on the component
-  position, or set the engine's own anchor once you know the size.
+- **`fit` reads the pose it is given.** Call it once after posing, or pass a
+  fixed `bounds` (the union of the clips, say) so a sword swing does not resize
+  the box under the character's feet.
 
 A reusable component package (with a hitbox derived from the skeleton) is on the
 [roadmap](https://github.com/RafaelBarbosatec/dragonbones_flutter#roadmap).
@@ -89,12 +107,21 @@ class DragonBonesGameComponent extends GameComponent {
 }
 ```
 
-For the hitbox, prefer Bonfire's own mixins over hand-rolling collision — take
-the extent from `player.computeBounds()` and hand it to a `Hitbox`:
+For the hitbox, prefer Bonfire's own mixins over hand-rolling collision. Bonfire
+speaks `Vector2` and the renderer speaks Flutter's `Size`, so the placement
+converts at the boundary — `fit` for the art, the bones for the hitbox:
 
 ```dart
 @override
 Future<void> onLoad() async {
+  // Place the art inside the component box.
+  player.fit(
+    size: Size(size.x, size.y),
+    fit: DragonBonesFit.contain,
+    align: Alignment.topLeft,
+  );
+
+  // Hitbox from the pose, not from the box.
   final b = player.computeBounds();
   if (b != null) {
     add(RectangleHitbox(size: Vector2(b.width, b.height)));
@@ -104,7 +131,8 @@ Future<void> onLoad() async {
 
 Note that `computeBounds()` reflects the **current pose**, so a character that
 swings a sword will report a wider box on the swing frame. If you want a stable
-hitbox, measure once at load time and cache it.
+hitbox, measure once at load time and cache it — the same reason to pass a fixed
+`bounds` to `fit`.
 
 ## Any engine, or none
 

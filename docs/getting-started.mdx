@@ -9,7 +9,7 @@ From nothing to an animated character on a Flutter `Canvas`.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.1.0
+  dragonbones_flutter: ^0.3.0
 ```
 
 This brings in [`dragonbones`](https://pub.dev/packages/dragonbones), the
@@ -20,7 +20,7 @@ dependency:
 
 ```yaml
 dependencies:
-  dragonbones: ^0.1.0
+  dragonbones: ^0.2.0
 ```
 
 Its `example/example.dart` runs it end to end on a bare Dart SDK.
@@ -96,8 +96,9 @@ DragonBonesWidget(
 ```
 
 `DragonBonesWidget` owns a `Ticker`, calls `player.update(dt)` for you, and
-repaints. `DragonBonesFit.contain` scales and centres the pose in the widget's
-box. Set `playing: false` for a static pose.
+repaints. `fit: DragonBonesFit.contain` scales and centres the pose in the
+widget's box — see [Place and scale it](#5-place-and-scale-it) for the other
+modes. Set `playing: false` for a static pose.
 
 ### The explicit way — your own painter
 
@@ -141,18 +142,48 @@ repaints with a `Ticker` or a `ValueNotifier` as above.
 
 ## 5. Place and scale it
 
-Three ways, in increasing order of control:
+The renderer draws in armature coordinates, so the placement — `scale` and
+`offset` — is yours to set. `fit` works it out from the pose for you: give it the
+box you are drawing into, how the armature should fill it, and where it should
+sit.
 
 ```dart
-// a) let the widget do it
-DragonBonesWidget(player: player, fit: DragonBonesFit.contain)
+player.fit(
+  size: const Size(200, 160),     // the box you render into
+  fit: DragonBonesFit.contain,    // largest scale that fits, aspect kept
+  align: Alignment.bottomCenter,  // feet on the bottom of the box
+);
+```
 
-// b) set it once on the player
+That is the whole placement problem for a game component: the component knows
+its `size`, the renderer knows the armature's extent. `fit` is also exactly what
+`DragonBonesWidget` calls internally, so the widget and an engine component end
+up with the same numbers.
+
+| `DragonBonesFit` | What it does |
+| --- | --- |
+| `contain` | Scale so the pose fits inside the box (default). |
+| `cover` | Scale so the pose covers the whole box; edges may crop. |
+| `fitWidth` / `fitHeight` | Match one axis; the other follows the aspect ratio. |
+| `none` | Leave `scale`/`offset` alone. |
+
+`fit` measures the **current** pose, so call it after the first `update`. A clip
+whose silhouette changes a lot — a sword swing — would otherwise resize the box
+mid-animation; pass a fixed `bounds` to pin it:
+
+```dart
+player.fit(size: size, bounds: poseBoundsAtRest);
+```
+
+Prefer to be explicit? The pieces, in increasing order of control:
+
+```dart
+// a) `fit` wrote these; nudge or replace them directly
 player
   ..scale = 2.0
   ..offset = const Offset(160, 200);
 
-// c) per call
+// b) per call, without touching the player
 player.render(canvas, scale: 2.0, offset: const Offset(160, 200));
 ```
 

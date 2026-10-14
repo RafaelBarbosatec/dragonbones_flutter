@@ -11,6 +11,33 @@ import 'package:flutter/widgets.dart';
 /// given atlas are, which keeps it usable with any asset pipeline.
 typedef AtlasImageResolver = ui.Image? Function(db.TextureAtlasData atlas);
 
+/// How [DragonBonesPlayer.fit] places the armature inside a box.
+///
+/// Every mode except [none] is a uniform scale (the player has a single
+/// [DragonBonesPlayer.scale]), so a non-uniform `fill` is deliberately absent:
+/// stretching an armature would shear the bone hierarchy.
+enum DragonBonesFit {
+  /// Leave [DragonBonesPlayer.scale] and [DragonBonesPlayer.offset] alone.
+  ///
+  /// Use this when the placement is hand-authored, as the plain-Flutter
+  /// example does.
+  none,
+
+  /// Scale up or down so the whole pose fits inside the box, preserving the
+  /// aspect ratio (the largest scale that fits).
+  contain,
+
+  /// Scale so the pose covers the whole box, preserving the aspect ratio (the
+  /// smallest scale that covers). Parts of the pose may stick out.
+  cover,
+
+  /// Match the box width; the height follows the aspect ratio.
+  fitWidth,
+
+  /// Match the box height; the width follows the aspect ratio.
+  fitHeight,
+}
+
 /// Draws one DragonBones armature onto a [Canvas].
 ///
 /// Two methods, no engine coupling:
@@ -22,6 +49,8 @@ typedef AtlasImageResolver = ui.Image? Function(db.TextureAtlasData atlas);
 ///
 /// Hook it to whatever drives your frames — a `Ticker`, an engine component's
 /// `update`/`render`, a Bonfire `GameComponent`, or a `CustomPainter`.
+/// [fit] is the optional third piece: it measures the pose and writes [scale]
+/// and [offset] so an engine component does not have to.
 ///
 /// Nothing here mutates engine objects: the runtime is driven through
 /// [db.HeadlessFactory] and the pose is read back as a [db.SlotDrawData] list.
@@ -93,6 +122,123 @@ class DragonBonesPlayer {
 
   /// The ordered list of things to draw at the current pose.
   List<db.SlotDrawData> get drawList => armature.buildDrawList();
+
+  /// Bounding box of the current pose, in armature coordinates.
+  ///
+  /// Computed from the sprite quads and the posed mesh vertices, so it moves
+  /// with the animation. Returns null when there is nothing to draw.
+  Rect? computeBounds() {
+    Rect? result;
+
+    void include(double x, double y) {
+      result = result == null
+          ? Rect.fromLTWH(x, y, 0, 0)
+          : result!.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
+    }
+
+    for (final data in drawList) {
+      if (!data.visible || data.texture == null) {
+        continue;
+      }
+      final m = data.matrix;
+
+      final mesh = data.mesh;
+      if (mesh != null) {
+        // A mesh has no quad: its extent is the posed triangle list, already in
+        // armature space but still to be transformed by the slot matrix.
+        for (var i = 0; i < mesh.vertices.length; i += 2) {
+          final px = mesh.vertices[i];
+          final py = mesh.vertices[i + 1];
+          include(m.a * px + m.c * py + m.tx, m.b * px + m.d * py + m.ty);
+        }
+        continue;
+      }
+
+      for (final corner in data.localQuad) {
+        include(m.a * corner[0] + m.c * corner[1] + m.tx,
+            m.b * corner[0] + m.d * corner[1] + m.ty);
+      }
+    }
+    return result;
+  }
+
+  /// Places the armature inside a `size` box and writes the result to [scale]
+  /// and [offset].
+  ///
+  /// This is the bridge the engine examples need: an engine component knows the
+  /// box it occupies (`size`) and where inside it the art should sit ([align]),
+  /// but not the armature's extent or its origin. Rather than recompute
+  /// `scale`/`offset` by hand every time, call this once after posing the first
+  /// frame:
+  ///
+  /// ```dart
+  /// // Flame / Bonfire component
+  /// @override
+  /// Future<void> onLoad() async {
+  ///   _player = DragonBonesPlayer(armature, resolveImage: assets.imageFor)
+  ///     ..play('idle')
+  ///     ..update(0);
+  ///
+  ///   _player.fit(
+  ///     size: Size(size.x, size.y),
+  ///     fit: DragonBonesFit.contain,
+  ///     align: Alignment.topLeft,
+  ///   );
+  /// }
+  ///
+  /// @override
+  /// void render(Canvas canvas) => _player.render(canvas);
+  /// ```
+  ///
+  /// The placement is derived from the **current** pose. Call it again after a
+  /// clip whose silhouette differs a lot (or pass a fixed [bounds], for example
+  /// the union of every clip, computed once) if you want the box to stay put
+  /// while the animation changes shape.
+  ///
+  /// Nothing happens when [fit] is [DragonBonesFit.none], when [size] is empty,
+  /// or when the pose has no extent — the existing [scale]/[offset] are left
+  /// untouched, which is what lets a widget opt out and keep a manual placement.
+  ///
+  /// Returns the bounds that were fitted, or null when there was no pose.
+  Rect? fit({
+    required Size size,
+    DragonBonesFit fit = DragonBonesFit.contain,
+    Alignment align = Alignment.center,
+    Rect? bounds,
+  }) {
+    final pose = bounds ?? computeBounds();
+
+    if (fit == DragonBonesFit.none ||
+        size.isEmpty ||
+        pose == null ||
+        pose.isEmpty) {
+      return pose;
+    }
+
+    // `Alignment` runs -1..1 on each axis; remap it to 0..1 so it can scale the
+    // box extent directly (`Alignment.center` -> 0.5, `topLeft` -> 0, ...).
+    final alignX = (align.x + 1) / 2;
+    final alignY = (align.y + 1) / 2;
+
+    final sx = size.width / pose.width;
+    final sy = size.height / pose.height;
+    final s = switch (fit) {
+      DragonBonesFit.cover => math.max(sx, sy),
+      DragonBonesFit.fitWidth => sx,
+      DragonBonesFit.fitHeight => sy,
+      DragonBonesFit.contain || DragonBonesFit.none => math.min(sx, sy),
+    };
+
+    scale = s;
+    // `pose.center` is drawn at `offset + center * s`; pin that to the aligned
+    // point of the box.
+    offset = Offset(
+      size.width * alignX - pose.center.dx * s,
+      size.height * alignY - pose.center.dy * s,
+    );
+
+    return pose;
+  }
 
   /// Draws the current pose.
   ///

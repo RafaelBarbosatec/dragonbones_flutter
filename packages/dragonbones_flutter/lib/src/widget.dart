@@ -3,16 +3,6 @@ import 'package:flutter/widgets.dart';
 
 import 'player.dart';
 
-/// How the armature is placed inside the widget's box.
-enum DragonBonesFit {
-  /// Draw at the armature's own coordinates (use [DragonBonesPlayer.offset] to
-  /// place it yourself).
-  none,
-
-  /// Scale and centre the armature so it fits the box.
-  contain,
-}
-
 /// Plays a [DragonBonesPlayer] and repaints it every frame.
 ///
 /// A convenience wrapper — if you already own a frame loop (an engine component,
@@ -123,73 +113,14 @@ class _DragonBonesPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (fit == DragonBonesFit.none || size.isEmpty) {
-      player.render(canvas);
-      return;
-    }
-
-    final bounds = player.computeBounds();
-    if (bounds == null || bounds.isEmpty) {
-      player.render(canvas);
-      return;
-    }
-
-    final scale = (size.width / bounds.width) < (size.height / bounds.height)
-        ? size.width / bounds.width
-        : size.height / bounds.height;
-
-    // Centre the armature's bounds in the box.
-    final offset = Offset(
-      size.width / 2 - bounds.center.dx * scale,
-      size.height / 2 - bounds.center.dy * scale,
-    );
-
-    player.render(canvas, scale: scale, offset: offset);
+    // `fit` computes and stores the placement; for `DragonBonesFit.none` (or
+    // an empty box / pose) it is a no-op, so a hand-authored scale/offset on
+    // the player survives.
+    player.fit(size: size, fit: fit);
+    player.render(canvas);
   }
 
   @override
   bool shouldRepaint(covariant _DragonBonesPainter oldDelegate) =>
       oldDelegate.player != player || oldDelegate.fit != fit;
-}
-
-/// A tiny helper for callers that want the same placement logic the widget uses.
-extension DragonBonesPlayerGeometry on DragonBonesPlayer {
-  /// Bounding box of the current pose, in armature coordinates.
-  ///
-  /// Computed from the sprite quads and the posed mesh vertices, so it moves
-  /// with the animation. Returns null when there is nothing to draw.
-  Rect? computeBounds() {
-    Rect? result;
-
-    void include(double x, double y) {
-      result = result == null
-          ? Rect.fromLTWH(x, y, 0, 0)
-          : result!.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
-    }
-
-    for (final data in drawList) {
-      if (!data.visible || data.texture == null) {
-        continue;
-      }
-      final m = data.matrix;
-
-      final mesh = data.mesh;
-      if (mesh != null) {
-        // A mesh has no quad: its extent is the posed triangle list, already in
-        // armature space but still to be transformed by the slot matrix.
-        for (var i = 0; i < mesh.vertices.length; i += 2) {
-          final px = mesh.vertices[i];
-          final py = mesh.vertices[i + 1];
-          include(m.a * px + m.c * py + m.tx, m.b * px + m.d * py + m.ty);
-        }
-        continue;
-      }
-
-      for (final corner in data.localQuad) {
-        include(m.a * corner[0] + m.c * corner[1] + m.tx,
-            m.b * corner[0] + m.d * corner[1] + m.ty);
-      }
-    }
-    return result;
-  }
 }

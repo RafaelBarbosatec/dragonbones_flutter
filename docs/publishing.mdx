@@ -7,8 +7,8 @@ Both packages are on pub.dev:
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.1.0 | **0.1.1**, pending release |
-| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.1.0 | **0.1.1**, pending release |
+| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.2.0 | 0.2.0 |
+| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.2.0 | **0.3.0**, pending release |
 
 A pub.dev release cannot be deleted — only retracted — so the trigger is always a
 human decision, never a CI side effect. This page is the release sequence for the
@@ -35,7 +35,7 @@ cd packages/dragonbones_flutter  && flutter pub publish --dry-run
 
 ```yaml
 dependencies:
-  dragonbones: ^0.1.0
+  dragonbones: ^0.2.0
 ```
 
 That is exactly why the runtime has to go out first: until the new `dragonbones`
@@ -77,7 +77,7 @@ flutter pub publish
 | `CHANGELOG.md` | ✅ | ✅ |
 | `README.md` | ✅ | ✅ |
 | Version bumped for the release | ⬜ per release | ⬜ per release |
-| No `path:` dependency | ✅ (no dependencies at all) | ✅ `dragonbones: ^0.1.0` |
+| No `path:` dependency | ✅ (no dependencies at all) | ✅ `dragonbones: ^0.2.0` |
 | `publish_to: none` removed | ✅ | ✅ |
 | `--dry-run` clean | ✅ gated in CI | ✅ |
 

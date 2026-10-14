@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
+import 'package:flutter/widgets.dart' show Alignment;
 import 'package:flutter_test/flutter_test.dart';
 
 /// Smoke test for the renderer: load the real fixtures, drive them, draw them.
@@ -62,6 +63,107 @@ void main() {
     expect(bounds, isNotNull);
     expect(bounds!.width, greaterThan(0));
     expect(bounds.height, greaterThan(0));
+  });
+
+  test('fit maps an explicit bounds rect into a box', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+    // A 60x80 pose at (-30, -40).
+    const bounds = ui.Rect.fromLTWH(-30, -40, 60, 80);
+    const box = ui.Size(200, 100);
+
+    player.fit(size: box, bounds: bounds, fit: DragonBonesFit.contain);
+    expect(player.scale, closeTo(100 / 80, 1e-9),
+        reason: 'contain is height-limited here');
+
+    player.fit(size: box, bounds: bounds, fit: DragonBonesFit.cover);
+    expect(player.scale, closeTo(200 / 60, 1e-9),
+        reason: 'cover is width-limited here');
+
+    player.fit(size: box, bounds: bounds, fit: DragonBonesFit.fitWidth);
+    expect(player.scale, closeTo(200 / 60, 1e-9));
+
+    player.fit(size: box, bounds: bounds, fit: DragonBonesFit.fitHeight);
+    expect(player.scale, closeTo(100 / 80, 1e-9));
+  });
+
+  test('fit honours the alignment anchor', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+    // A 40x40 pose whose centre is (30, 40).
+    const bounds = ui.Rect.fromLTWH(10, 20, 40, 40);
+    const box = ui.Size(200, 100);
+    const fittedScale = 2.5; // min(200/40, 100/40)
+
+    player.fit(
+      size: box,
+      bounds: bounds,
+      align: Alignment.topLeft,
+    );
+    expect(player.scale, closeTo(fittedScale, 1e-9));
+    // The pose centre lands on the top-left of the box.
+    expect(player.offset.dx + 30 * fittedScale, closeTo(0, 1e-9));
+    expect(player.offset.dy + 40 * fittedScale, closeTo(0, 1e-9));
+
+    player.fit(
+      size: box,
+      bounds: bounds,
+      align: Alignment.bottomRight,
+    );
+    expect(player.offset.dx + 30 * fittedScale, closeTo(200, 1e-9));
+    expect(player.offset.dy + 40 * fittedScale, closeTo(100, 1e-9));
+  });
+
+  test('fit leaves a manual placement alone when it cannot fit', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor)
+      ..scale = 7
+      ..offset = const ui.Offset(3, 4);
+
+    player.fit(size: const ui.Size(100, 100), fit: DragonBonesFit.none);
+    expect(player.scale, 7);
+    expect(player.offset, const ui.Offset(3, 4));
+
+    player.fit(size: ui.Size.zero, fit: DragonBonesFit.contain);
+    expect(player.scale, 7, reason: 'an empty box cannot be fitted');
+
+    player.fit(
+      size: const ui.Size(100, 100),
+      bounds: ui.Rect.zero,
+      fit: DragonBonesFit.contain,
+    );
+    expect(player.scale, 7, reason: 'an empty pose cannot be fitted');
+  });
+
+  test('fit contains the live pose in the box', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor)
+      ..play('walk')
+      ..update(1 / 24);
+
+    const box = ui.Size(120, 120);
+    final fitted = player.fit(size: box);
+    expect(fitted, isNotNull);
+
+    final w = fitted!.width * player.scale;
+    final h = fitted.height * player.scale;
+    expect(w, lessThanOrEqualTo(box.width + 1e-6));
+    expect(h, lessThanOrEqualTo(box.height + 1e-6));
+
+    final drawnCenter = ui.Offset(
+      player.offset.dx + fitted.center.dx * player.scale,
+      player.offset.dy + fitted.center.dy * player.scale,
+    );
+    expect(
+      (drawnCenter - ui.Offset(box.width / 2, box.height / 2)).distance,
+      lessThan(1e-6),
+    );
   });
 
   test('poses and paints a deformable mesh (drawVertices)', () async {

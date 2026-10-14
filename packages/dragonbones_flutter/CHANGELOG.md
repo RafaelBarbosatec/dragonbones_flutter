@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.0
+
+**Placement is now the player's job.** `DragonBonesPlayer.fit` measures the
+current pose and writes `scale`/`offset` from the box you render into, so a
+Flame/Bonfire component no longer computes them by hand:
+
+```dart
+player
+  ..play('idle')
+  ..update(0)
+  ..fit(
+    size: Size(size.x, size.y),
+    fit: DragonBonesFit.contain,
+    align: Alignment.bottomCenter,
+  );
+```
+
+- `DragonBonesFit` gains `cover`, `fitWidth` and `fitHeight` alongside
+  `contain` and `none`. `fit` also takes an optional `bounds` to pin a clip
+  whose silhouette changes (a sword swing), and returns the bounds it fitted.
+- `computeBounds()` moves from the `DragonBonesPlayerGeometry` extension onto
+  `DragonBonesPlayer` itself; the call site (`player.computeBounds()`) is
+  unchanged.
+- `DragonBonesWidget` delegates its own fit to `player.fit`, so the widget and a
+  hand-written engine component place an armature with the same numbers.
+- The Bonfire example drops its manual `min(...)`/`abs()` placement in favour of
+  the method.
+
+Requires `dragonbones: ^0.2.0`.
+
 ## 0.2.0
 
 **Animation events reach the player.** `dragonbones` gained a full event system

@@ -18,13 +18,14 @@ TypeScript/JS, C++, C#, Java, Haxe and ActionScript — but **never for Dart or
 Flutter**. This project closes that gap.
 
 <Info>
-  **Status: v0.1.1.** Feature-complete for the common case, not for everything.
-  Both packages are on pub.dev:
+  **Status: v0.2.0 released; v0.3.0 pending.** Feature-complete for the common
+  case, not for everything. Both packages are on pub.dev:
   [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
   [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-  renderer). Both are at `0.1.1` in the repository, pending release. For exactly
-  what is missing, read [Limitations](/limitations): it is a short, specific
-  list, not a vague disclaimer.
+  renderer). The renderer's `0.3.0` is in the repository, waiting for its
+  release commit. For exactly what is missing, read
+  [Limitations](/limitations): it is a short, specific list, not a vague
+  disclaimer.
 </Info>
 
 ## Two packages
@@ -48,7 +49,9 @@ player.render(canvas); // draw the pose
 ```
 
 That is the entire contract, which is why the same code drops into a plain
-Flutter app, any game engine's component, or your own painter.
+Flutter app, any game engine's component, or your own painter. Placement is the
+only extra: `player.fit(size: ..., align: ...)` measures the pose and writes
+`scale`/`offset`, so an engine component never has to.
 
 ## Verify it yourself
 

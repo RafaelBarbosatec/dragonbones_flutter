@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:bonfire/bonfire.dart';
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
 import 'package:flutter/services.dart';
@@ -169,14 +167,13 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
     _player.play('idle');
     _player.update(0);
 
-    // Fit the armature's bounds into the component box. `computeBounds` is in
-    // armature space and its left/top are negative, so `abs` is exactly the
-    // offset that pins the sprite's top-left onto the component's origin.
-    final bounds = _player.computeBounds()!;
-    final scale = min(size.x, size.y) / min(bounds.width, bounds.height);
-    _player
-      ..scale = scale
-      ..offset = Offset(bounds.left.abs() * scale, bounds.top.abs() * scale);
+    // Let the player work out its own placement from the component box: `fit`
+    // measures the pose, then writes `scale` and `offset` so the sprite sits in
+    // the box anchored top-left, flush with the hitbox below it.
+    _player.fit(
+      size: Size(size.x, size.y),
+      fit: DragonBonesFit.contain,
+    );
     _animation = 'idle';
   }
 }
