@@ -245,23 +245,26 @@ Ordered by what a real game project would hit first.
       the `start` / `loopComplete` / `complete` / `fade*` hooks, `gotoAndPlay`
       actions, and child-armature propagation — verified against the official
       runtime as an event sequence (47 fixtures, 174 scenarios, 1,919 events).
-- [ ] **`IKConstraintTimelineState`.** Static IK is verified; animated IK is not.
-      Until this lands, a rig that animates IK weight is silently wrong.
-- [ ] **`SlotZIndex` timeline.** Draw order is a correctness issue, not a polish
-      one.
-- [ ] **`SlotAlpha` / `BoneAlpha` timelines.** Per-slot fade without touching the
-      colour timeline.
-- [ ] **`PathConstraint` and `Surface` bones.** Completes the constraint model.
+- [ ] **`IKConstraintTimelineState`.** Static IK is solved and verified; an
+      *animated* IK weight/bend is not. `_updateTimelines()` is a no-op, so a rig
+      that animates its IK is silently wrong.
+- [ ] **`SlotZIndex` timeline.** Static z-order works; the per-slot `SlotZIndex`
+      timeline is ignored, so draw order can be wrong mid-animation.
+- [ ] **`SlotAlpha` / `BoneAlpha` timelines.** `AlphaTimelineState` exists but is
+      never instantiated, so per-slot fade runs through the colour timeline only.
+- [ ] **`PathConstraint` and `Surface` bones.** Both are parsed: `PathConstraint`
+      is skipped and `Surface` bones are built as plain bones, so neither deforms
+      its geometry.
 
 **Wanted, not blocking**
 
 - [ ] **An engine component package** — a ready-made component that owns an
       `Animation` and exposes it through an engine's lifecycle, plus a hitbox
-      from the armature's bounds. The renderer already drops in; this is sugar,
-      not capability.
-- [ ] **A Bonfire adapter**, built on that, wired to the engine's hitbox system.
-- [ ] **Better `computeBounds()`** for placement and hitboxes from the skeleton
-      rather than re-measuring each frame.
+      from the armature's bounds. `fit` already handles the placement; this is
+      sugar, not capability.
+- [ ] **Skeleton-derived `computeBounds()`.** `fit` measures the current pose on
+      every call; deriving the extent from the skeleton, or caching the union of
+      the clips, would place a character without re-measuring each frame.
 - [ ] **Performance work and benchmarks**, including whether a light pool is
       worth reintroducing.
 - [ ] **Binary `.dragonbones` support.**
