@@ -1,0 +1,205 @@
+---
+title: Animation events
+description: Listen to frame events, sound events and the animation lifecycle through the armature's dispatcher.
+---
+
+DragonBones animations carry **events the animator placed on the timeline**
+(`"events"` and `"sound"` in the skeleton JSON), and the runtime reports its own
+**lifecycle** (`start`, `loopComplete`, `complete`, fades). Both arrive through a
+single dispatcher — `armature.eventDispatcher` — so one API covers "a footstep
+happened" and "the death animation finished".
+
+The runtime never plays audio or spawns anything: it reports a type and a name,
+and the application decides what they mean.
+
+## Register a listener
+
+```dart
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.COMPLETE,
+  (event) => debugPrint('${event.animationState?.name} finished'),
+);
+```
+
+The callback is `void Function(EventObject)`. Unlike upstream DragonBones there
+is **no `thisObject` argument** — a Dart closure already captures its own
+context.
+
+The dispatcher belongs to the **armature**, not the player. There is nothing to
+start or stop: registering a listener is what turns the feature on. The runtime
+checks `hasDBEventListener` before allocating an event, so an app that listens to
+nothing pays nothing.
+
+### Unregister
+
+`removeDBEventListener` must receive the **same function reference** you
+registered, so hold the callback in a field if you plan to remove it:
+
+```dart
+void _onComplete(EventObject event) {
+  setState(() => _state = 'idle');
+}
+
+@override
+void initState() {
+  super.initState();
+  player.armature.eventDispatcher
+      .addDBEventListener(EventObject.COMPLETE, _onComplete);
+}
+
+@override
+void dispose() {
+  player.armature.eventDispatcher
+      .removeDBEventListener(EventObject.COMPLETE, _onComplete);
+  super.dispose();
+}
+```
+
+You can also ask whether anything is listening:
+
+```dart
+final listening = player.armature.eventDispatcher
+    .hasDBEventListener(EventObject.FRAME_EVENT);
+```
+
+## Event types
+
+| Constant | Fires when |
+| --- | --- |
+| `EventObject.START` | An animation starts playing. |
+| `EventObject.LOOP_COMPLETE` | A looping animation completes one loop. |
+| `EventObject.COMPLETE` | An animation finishes its last repetition. |
+| `EventObject.FADE_IN` | A fade-in starts. |
+| `EventObject.FADE_IN_COMPLETE` | A fade-in ends. |
+| `EventObject.FADE_OUT` | A fade-out starts. |
+| `EventObject.FADE_OUT_COMPLETE` | A fade-out ends. |
+| `EventObject.FRAME_EVENT` | A named event the animator placed on a frame. |
+| `EventObject.SOUND_EVENT` | A sound action on a frame. |
+
+`FRAME_EVENT` and `SOUND_EVENT` come from the animation's data; the rest are
+lifecycle events the runtime emits on its own.
+
+## What the event carries
+
+`EventObject` fields:
+
+| Field | Meaning |
+| --- | --- |
+| `type` | One of the constants above. |
+| `name` | The event / sound name the animator set. |
+| `time` | The time (seconds) the frame event sits at on the timeline. |
+| `animationState` | The `AnimationState` that dispatched it (`.name`, `.isCompleted`, …). |
+| `armature` | The armature that dispatched it. |
+| `bone` / `slot` | Set when the action names a bone or a slot. |
+| `data` | Custom payload (`UserData`: `.ints`, `.floats`, `.strings`). |
+
+React to a named frame event and read the payload the animator attached:
+
+```dart
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.FRAME_EVENT,
+  (event) {
+    switch (event.name) {
+      case 'footstep':
+        final clip = event.data?.strings;
+        playStepSound(clip == null || clip.isEmpty ? null : clip.first);
+      case 'fire':
+        spawnProjectile();
+    }
+  },
+);
+```
+
+## `gotoAndPlay` arrives as a frame event
+
+A `Play` action set in the editor (a `gotoAndPlay`) is delivered as a
+`FRAME_EVENT`, exactly like a named frame event — upstream does the same, so the
+two are **indistinguishable on the listener side** by design. If you want both,
+key off `event.name`.
+
+## Sound events are delivered twice
+
+A `SOUND_EVENT` reaches **both**:
+
+1. the armature's dispatcher — `armature.eventDispatcher`, and
+2. the hub's global dispatcher — `armature.dragonBones.eventManager`.
+
+That second delivery is deliberate: audio belongs to the application, not to one
+armature, so a sound can be mixed once for a whole scene. Hook it in **one** of
+the two, or it plays twice:
+
+```dart
+armature.dragonBones.eventManager?.addDBEventListener(
+  EventObject.SOUND_EVENT,
+  (event) => audio.play(event.name),
+);
+```
+
+`eventManager` is optional and receives **only** sound events; the armature's own
+dispatcher receives everything else.
+
+## Timing: events arrive after the pose
+
+Events are buffered while the frame advances and dispatched **after** the pose
+has been evaluated. That is what makes it safe to call back into the armature
+from inside a listener — play another animation, hide a slot, dispose a child —
+without mutating a timeline that is still being walked:
+
+```dart
+player.armature.eventDispatcher.addDBEventListener(
+  EventObject.COMPLETE,
+  (event) {
+    if (event.animationState?.name == 'attack') {
+      player.play('idle'); // safe: the clip is already posed this frame
+    }
+  },
+);
+```
+
+This is also why the player advances the **hub** (`DragonBones.advanceTime`) on a
+non-zero step instead of the armature directly: a per-armature step buffers
+events that nobody flushes.
+
+## Cost
+
+The runtime calls `hasDBEventListener(type)` before building an `EventObject`,
+and only for types someone listens to. With no listeners, the feature allocates
+nothing and dispatches nothing.
+
+## Putting it together
+
+A minimal state machine: a character plays a one-shot clip, then returns to idle
+when the runtime says it finished.
+
+```dart
+class _HeroState extends State<Hero> {
+  late final DragonBonesPlayer player;
+
+  @override
+  void initState() {
+    super.initState();
+    player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+    player.armature.eventDispatcher
+        .addDBEventListener(EventObject.COMPLETE, _onComplete);
+    player.play('idle');
+  }
+
+  void _onComplete(EventObject event) {
+    if (event.animationState?.name == 'attack') {
+      player.play('idle');
+    }
+  }
+
+  @override
+  void dispose() {
+    player.armature.eventDispatcher
+        .removeDBEventListener(EventObject.COMPLETE, _onComplete);
+    super.dispose();
+  }
+}
+```
+
+## Next
+
+- What is not evaluated, including event edge cases: [Limitations](/limitations)
+- Driving the player from a game engine: [Integration](/integration)

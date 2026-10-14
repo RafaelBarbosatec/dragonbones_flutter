@@ -303,6 +303,10 @@ Three things worth knowing:
 Because events are only built when someone is listening
 (`hasDBEventListener`), a player that ignores them pays nothing for this.
 
+This is the short version — `removeDBEventListener`, the full event-type table,
+the custom payload and the global `eventManager` are covered in
+**[Animation events](/events)**.
+
 ## Debugging: nothing is drawing
 
 Two counters on the player tell you why a slot was skipped during the last
@@ -329,6 +333,7 @@ for (final data in player.drawList) {
 
 ## Next
 
+- Animation events in full: [Animation events](/events)
 - Inside a game engine or a test: [Integration](/integration)
 - What is not supported, and what breaks if you use it:
   [Limitations](/limitations)

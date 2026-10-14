@@ -34,7 +34,7 @@ For a real game the win is not "prettier sprites". It is:
 - **deform meshes** — squash, stretch and bend art that was drawn rigid;
 - **bone attachment** — spawn hitboxes and effects on a bone, not on a guess;
 - **animation events** — drive damage, sounds and projectiles from the animation
-  itself. *(Not ported yet — see [Limitations](#limitations).)*
+  itself — see [Animation events](https://docs.page/RafaelBarbosatec/dragonbones_flutter/events).
 
 ## The two packages
 

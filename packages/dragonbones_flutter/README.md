@@ -139,6 +139,10 @@ posed, so a listener may play another animation. A `soundEvent` is delivered
 twice — once on the armature and once on the hub's `eventManager` — so hook audio
 in one place only. The runtime never plays audio; it reports names.
 
+Full reference — `removeDBEventListener`, the event-type table, custom payloads
+and the global `eventManager`:
+**[Animation events](https://docs.page/RafaelBarbosatec/dragonbones_flutter/events)**.
+
 ## Known limitations
 
 Inherited from the runtime (the renderer cannot draw what is not evaluated):

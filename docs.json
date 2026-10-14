@@ -42,6 +42,7 @@
       "group": "Guides",
       "icon": "book",
       "pages": [
+        { "title": "Animation events", "href": "/events" },
         { "title": "Limitations", "href": "/limitations" },
         { "title": "Architecture & verification", "href": "/architecture" }
       ]
