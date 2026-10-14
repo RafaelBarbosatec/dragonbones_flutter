@@ -151,9 +151,12 @@ and the global `eventManager`:
 Inherited from the runtime (the renderer cannot draw what is not evaluated):
 
 - **Animated IK is ignored** — static IK works.
-- **`SlotZIndex` and `SlotAlpha` / `BoneAlpha` timelines** are not evaluated, so
-  animated draw order and per-slot fade will be wrong.
+- **`SlotZIndex` timeline** is not evaluated, so animated draw order will be
+  wrong.
 - **Path constraints and `Surface` bones** are not evaluated.
+
+(`SlotAlpha` / `BoneAlpha` — per-slot and per-bone fade — **are** evaluated as
+of `[NEXT]`; the effective alpha is folded into the slot colour.)
 
 Specific to this package:
 

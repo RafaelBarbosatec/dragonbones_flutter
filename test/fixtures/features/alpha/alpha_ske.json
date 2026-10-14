@@ -1,0 +1,123 @@
+{
+  "frameRate": 24,
+  "name": "alpha_test",
+  "version": "5.5",
+  "compatibleVersion": "5.5",
+  "armature": [
+    {
+      "type": "Armature",
+      "frameRate": 24,
+      "name": "alpha_test",
+      "aabb": {
+        "x": -64,
+        "y": -10,
+        "width": 74,
+        "height": 20
+      },
+      "bone": [
+        {
+          "length": 20,
+          "name": "root"
+        },
+        {
+          "inheritScale": false,
+          "length": 20,
+          "name": "bullet",
+          "parent": "root"
+        }
+      ],
+      "slot": [
+        {
+          "name": "b",
+          "parent": "bullet"
+        }
+      ],
+      "skin": [
+        {
+          "name": "",
+          "slot": [
+            {
+              "name": "b",
+              "display": [
+                {
+                  "name": "bullet_01_f/bullet_01",
+                  "transform": {
+                    "x": -27
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "animation": [
+        {
+          "duration": 24,
+          "name": "idle",
+          "bone": [
+            {
+              "name": "bullet",
+              "translateFrame": [
+                {
+                  "duration": 24,
+                  "tweenEasing": 0
+                },
+                {
+                  "duration": 0,
+                  "x": 40
+                }
+              ]
+            }
+          ],
+          "timeline": [
+            {
+              "name": "b",
+              "type": 24,
+              "frame": [
+                {
+                  "duration": 8,
+                  "value": 1
+                },
+                {
+                  "duration": 8,
+                  "value": 0.25
+                },
+                {
+                  "duration": 8,
+                  "value": 1
+                },
+                {
+                  "duration": 0,
+                  "value": 0
+                }
+              ]
+            },
+            {
+              "name": "bullet",
+              "type": 60,
+              "frame": [
+                {
+                  "duration": 12,
+                  "value": 1
+                },
+                {
+                  "duration": 12,
+                  "value": 0.5
+                },
+                {
+                  "duration": 0,
+                  "value": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "defaultActions": [
+        {
+          "gotoAndPlay": "idle"
+        }
+      ]
+    }
+  ]
+}

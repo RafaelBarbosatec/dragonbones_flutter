@@ -206,7 +206,6 @@ rather than crash loudly. That is the dangerous kind, so it is spelled out.
 | **Path constraints** (`PathConstraint`) | data parsed, never built | Bones meant to follow a path do not. |
 | **`Surface` bones** (`SurfaceTimelineState`) | model only | `SurfaceData`/`Surface` exist; the timeline is never created, so surfaces do not deform. |
 | **`SlotZIndex` timeline** | not ported | Static z-order from the armature data works. A timeline animating z-index is ignored, so draw order will be wrong mid-animation. |
-| **`BoneAlpha` / `SlotAlpha` timelines** | not ported | `AlphaTimelineState` exists but the timeline switch never instantiates it. The `SlotColor` timeline (which carries an alpha multiplier) *does* work. |
 | **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | not ported | Blending between animations (`AnimationBlendType`) is not evaluated. |
 | **Binary `.dragonbones` input** (`BinaryDataParser`) | not ported | JSON export only. |
 
@@ -250,13 +249,14 @@ Ordered by what a real game project would hit first.
       that animates its IK is silently wrong.
 - [ ] **`SlotZIndex` timeline.** Static z-order works; the per-slot `SlotZIndex`
       timeline is ignored, so draw order can be wrong mid-animation.
-- [ ] **`SlotAlpha` / `BoneAlpha` timelines.** `AlphaTimelineState` exists but is
-      never instantiated, so per-slot fade runs through the colour timeline only.
+- [x] **`SlotAlpha` / `BoneAlpha` timelines.** Done in `[NEXT]`: both are wired
+      into the timeline switch and verified against the official runtime (a
+      hand-authored fixture, since the SDK demos predate alpha timelines).
 - [ ] **`PathConstraint` and `Surface` bones.** Both are parsed: `PathConstraint`
       is skipped and `Surface` bones are built as plain bones, so neither deforms
       its geometry.
 
-`test/fixtures/features/` already holds the assets for the last four items —
+`test/fixtures/features/` already holds the assets for the remaining items —
 `shizuku` (slotAlpha, slotZIndex, Surface and blend) and a `.dbbin` container,
 fetched by `tool/ground_truth/fetch_features.sh`. They are staged, not swept:
 each joins the oracle comparison when its feature lands.

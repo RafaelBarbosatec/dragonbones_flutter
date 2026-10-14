@@ -71,6 +71,11 @@ const List<Target> namedTargets = <Target>[
   // Four armatures in one file, three of them nested inside slots of the first —
   // this is what exercises the child-armature flattening.
   Target('Mecha_walk', '$_mecha/ske.json', '$_mecha/tex.json', 'mecha_1004d', 'walk', 'mecha'),
+  // SlotAlpha + BoneAlpha, hand-authored in the newer `timeline` array format
+  // (the SDK demos predate separate alpha timelines). A 0.25 slot alpha under a
+  // 0.5 bone alpha must land on the effective 0.125 the oracle dumps.
+  Target('feature_alpha', '$_fixtures/features/alpha/alpha_ske.json', '$_fixtures/features/alpha/alpha_tex.json',
+      'alpha_test', 'idle', 'alpha'),
 ];
 
 /// One entry per `out/unity__*.json`, resolved back to its source files.

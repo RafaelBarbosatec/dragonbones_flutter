@@ -34,6 +34,11 @@ node tool/ground_truth/dump.js "$FIX/龙_ske.json" "$FIX/龙_tex.json" \
 node tool/ground_truth/dump.js example/assets/mecha_1004d/ske.json \
   example/assets/mecha_1004d/tex.json walk "$OUT/Mecha_walk.json" mecha_1004d
 
+# feature fixtures (staged under test/fixtures/features). Only the ones the
+# runtime evaluates are dumped; the rest join here as their features land.
+node tool/ground_truth/dump.js "$FIX/features/alpha/alpha_ske.json" \
+  "$FIX/features/alpha/alpha_tex.json" idle "$OUT/feature_alpha.json" alpha_test
+
 # ------------------------------------------------------------ Unity SDK sweep
 # Every demo asset from DragonBones/DragonBonesUnity, one dump each.
 if [ -d "$FIX/unity" ]; then

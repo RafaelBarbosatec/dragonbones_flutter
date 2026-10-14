@@ -96,9 +96,6 @@ mostly animate, then be subtly wrong rather than fail loudly.
 - **Path constraints** (`PathConstraint`) — data parsed, never built.
 - **`Surface` bones** (`SurfaceTimelineState`) — model classes only.
 - **`SlotZIndex` timeline** — static z-order works; an animated z-index is ignored.
-- **`BoneAlpha` / `SlotAlpha` timelines** — `AlphaTimelineState` exists but is
-  never instantiated. The `SlotColor` timeline, which carries an alpha
-  multiplier, does work.
 - **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`,
   `AnimationParameter`).
 - **Binary `.dragonbones` input** (`BinaryDataParser`) — JSON export only.

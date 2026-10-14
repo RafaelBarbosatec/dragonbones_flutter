@@ -257,7 +257,11 @@ function dumpState(armature) {
     return {
       name: s.name,
       displayIndex: s.displayIndex,
-      color: [r(s._colorTransform.alphaMultiplier), r(s._colorTransform.redMultiplier),
+      // The effective alpha folds in the accumulated SlotAlpha/BoneAlpha value
+      // (`_globalAlpha`), which an engine binding applies on top of the colour
+      // transform before drawing. It is 1.0 when no alpha timeline plays, so
+      // this changes nothing for every other asset.
+      color: [r(s._colorTransform.alphaMultiplier * s._globalAlpha), r(s._colorTransform.redMultiplier),
               r(s._colorTransform.greenMultiplier), r(s._colorTransform.blueMultiplier),
               r(s._colorTransform.alphaOffset), r(s._colorTransform.redOffset),
               r(s._colorTransform.greenOffset), r(s._colorTransform.blueOffset)],

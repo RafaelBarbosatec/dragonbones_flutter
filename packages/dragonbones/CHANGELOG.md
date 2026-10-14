@@ -1,5 +1,25 @@
 # Changelog
 
+## [NEXT]
+
+**`SlotAlpha` / `BoneAlpha` timelines.** The alpha timelines from the newer
+`timeline` array format now reach the armature: `SlotAlpha` fades a slot, and
+`BoneAlpha` fades a bone and its children. `AlphaTimelineState` already existed
+— it is now instantiated, mirroring upstream's
+`AnimationState._updateBoneAndSlotTimelines`.
+
+- `TimelineType.BoneAlpha` and `TimelineType.SlotAlpha` are wired into the
+  timeline switch, each getting its own blend state (`BlendState.BONE_ALPHA` /
+  `SLOT_ALPHA`).
+- The effective alpha (`_globalAlpha`, the product down the bone hierarchy) is
+  folded into `Slot.colorValues`, so a renderer gets it with no change: the
+  colour's `alphaMultiplier` already carries it.
+- The oracle now dumps that effective alpha (`dump.js` multiplies by
+  `_globalAlpha`, which is `1.0` for every other asset), and a new fixture —
+  `test/fixtures/features/alpha`, hand-authored in the `timeline` format because
+  the SDK demos predate alpha timelines — is checked frame by frame: a `0.25`
+  slot alpha under a `0.5` bone alpha lands on the effective `0.125`.
+
 ## 0.2.0
 
 **Animation events.** The runtime no longer only *draws* an animation — it

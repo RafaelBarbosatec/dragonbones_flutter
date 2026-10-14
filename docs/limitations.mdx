@@ -26,7 +26,6 @@ them throw. All of them will make your animation quietly wrong.
 | **Path constraints** (`PathConstraint`) | `PathConstraintData` is parsed into the model; the runtime class is never built. `Armature._buildConstraints` handles IK only. | A bone meant to travel along a path stays at its own transform. |
 | **`Surface` bones** (`SurfaceTimelineState`) | `SurfaceData` and `Surface` exist as model/armature classes; the timeline state is never created, and the bone/slot timeline switch has no `Surface` case. | Surface deformation does not happen. The bone behaves as a plain bone. |
 | **`SlotZIndex` timeline** | No `SlotZIndexTimelineState`; the slot timeline switch handles display, colour and deform only. | Static z-order from the armature data works. An **animated** z-index is ignored, so draw order is wrong mid-animation — a cloak that should move behind the body stays in front. |
-| **`BoneAlpha` / `SlotAlpha` timelines** | `AlphaTimelineState` is ported but never instantiated — there is no `BoneAlpha` or `SlotAlpha` case in either timeline switch. | Per-slot fade driven by a dedicated alpha timeline does nothing. Note the **`SlotColor` timeline does work**, including its alpha multiplier, so fading via colour is fine. |
 | **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | `AnimationState.addState` exists, but no timeline state is created, and `AnimationBlendType` (E1D / E2D blending) is never evaluated. | Blending one animation into another by parameter does not happen; child animation states do not drive the parent. |
 | **Binary `.dragonbones` input** (`BinaryDataParser`) | Only `ObjectDataParser` (JSON) exists. | A binary export will not parse at all — this one *does* fail loudly, which is the good kind. |
 
@@ -43,7 +42,7 @@ skeleton JSON:
 | `"type":50` in a timeline | `Surface` timeline — not supported. |
 | `"type":30` in a timeline | `IKConstraint` timeline — the IK weight is animated and will be ignored. |
 | `"type":23` in a `slot` timeline | `SlotZIndex` timeline — not supported. |
-| `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — not supported. |
+| `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — **supported** as of `[NEXT]`. |
 
 (The timeline type numbers above are the ones this port uses; see
 `TimelineType` in `packages/dragonbones/lib/src/core/dragon_bones.dart`.)

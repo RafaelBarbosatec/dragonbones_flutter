@@ -924,7 +924,12 @@ abstract class Slot extends TransformObject {
 
   /// Slot colour as `[aM, rM, gM, bM, aO, rO, gO, bO]`.
   List<double> get colorValues => <double>[
-        this._colorTransform.alphaMultiplier,
+        // The colour timeline writes `_colorTransform`; the accumulated alpha
+        // from the SlotAlpha/BoneAlpha timelines (`_globalAlpha`) is applied on
+        // top, which is what an engine binding does before handing the colour
+        // to the display. With no alpha timeline `_globalAlpha` is 1.0, so this
+        // is a no-op for every other asset.
+        this._colorTransform.alphaMultiplier * this._globalAlpha,
         this._colorTransform.redMultiplier,
         this._colorTransform.greenMultiplier,
         this._colorTransform.blueMultiplier,

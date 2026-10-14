@@ -16,8 +16,17 @@ reports which of these features each fixture exercises.
 
 | Fixture | Exercises | Blocks on |
 | --- | --- | --- |
-| `shizuku/shizuku_ske.json` | `slotAlpha` (9 timelines), `slotZIndex` (36), `Surface` (117 bones, 198 timelines), animation `blendType` (progress/parameter) | Surface bones + the alpha/zIndex timelines |
+| `alpha/alpha_ske.json` | `slotAlpha` + `boneAlpha`, hand-authored in the `timeline` format | **swept** already (`feature_alpha`) |
+| `shizuku/shizuku_ske.json` | `slotZIndex` (36 timelines), `Surface` (117 bones, 198 timelines), animation `blendType` (progress/parameter), plus `slotAlpha` | Surface bones + the zIndex/blend timelines |
 | `binary/mecha_1002_101d_show_ske.dbbin` | the binary `.dragonbones` container (`DBDT` magic, embedded JSON) | the binary data parser |
+
+## alpha
+
+A minimal armature (two bones, one slot) hand-authored in the newer `timeline`
+array format, with a `slotAlpha` timeline on the slot and a `boneAlpha` timeline
+on the child bone. It is the first feature fixture in the oracle sweep
+(`feature_alpha`): the effective alpha is `0.25` (slot) × `0.5` (bone) = `0.125`
+on the frames where both are active.
 
 ## shizuku
 

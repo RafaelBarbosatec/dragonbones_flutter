@@ -261,7 +261,16 @@ class AnimationState extends BaseObject {
                     break;
                   }
 
-                // Milestone 2: BoneAlpha / Surface timelines are not ported.
+                case TimelineType.BoneAlpha:
+                  {
+                    final timeline = AlphaTimelineState();
+                    timeline.target = this._armature!.animation.getBlendState(BlendState.BONE_ALPHA, bone.name, bone);
+                    timeline.init(this._armature!, this, timelineData);
+                    this._boneBlendTimelines.add(timeline);
+                    break;
+                  }
+
+                // Milestone 2: Surface timelines are not ported.
                 default:
                   break;
               }
@@ -391,7 +400,16 @@ class AnimationState extends BaseObject {
                     break;
                   }
 
-                // Milestone 2: SlotZIndex / SlotAlpha timelines are not ported.
+                case TimelineType.SlotAlpha:
+                  {
+                    final timeline = AlphaTimelineState();
+                    timeline.target = this._armature!.animation.getBlendState(BlendState.SLOT_ALPHA, slot.name, slot);
+                    timeline.init(this._armature!, this, timelineData);
+                    this._slotBlendTimelines.add(timeline);
+                    break;
+                  }
+
+                // Milestone 2: SlotZIndex timelines are not ported.
                 default:
                   break;
               }
