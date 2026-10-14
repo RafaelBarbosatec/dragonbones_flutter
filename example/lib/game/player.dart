@@ -1,5 +1,6 @@
 import 'package:bonfire/bonfire.dart';
 import 'package:dragonbones_flutter/dragonbones_flutter.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 /// The playable character: a Bonfire [Player] whose clips come from a
@@ -140,6 +141,7 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
 
   @override
   void render(Canvas canvas) {
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.x, size.y), paint);
     _player.render(canvas);
     super.render(canvas);
   }
@@ -154,25 +156,19 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
       image: 'assets/mecha_2903/tex.png',
     );
 
-    // `mecha_2903d` is the armoured variant, and the only armature in the file
-    // with locomotion *and* action clips.
-    final armature = assets.buildArmature('mecha_2903d');
-    if (armature == null) {
-      throw StateError('armature "mecha_2903d" not found');
-    }
-    _armature = armature;
-    _player = DragonBonesPlayer(_armature, resolveImage: assets.imageFor);
-
-    // Pose the first frame before measuring it.
+    // Built with `assets`, so the first `fit` measures a stable box across every
+    // clip by itself — no `measureBounds`, no `resolveImage` to wire.
+    _player = assets.createPlayer('mecha_2903d');
+    _armature = _player.armature;
+    // Pose the first frame so the very first render is not blank.
     _player.play('idle');
     _player.update(0);
 
-    // Let the player work out its own placement from the component box: `fit`
-    // measures the pose, then writes `scale` and `offset` so the sprite sits in
-    // the box anchored top-left, flush with the hitbox below it.
+    // Stable placement from the component box; writes `scale` and `offset`.
     _player.fit(
       size: Size(size.x, size.y),
       fit: DragonBonesFit.contain,
+      align: Alignment.bottomCenter,
     );
     _animation = 'idle';
   }

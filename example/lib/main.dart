@@ -100,7 +100,7 @@ class _DemoPageState extends State<DemoPage> {
       return;
     }
 
-    final player = DragonBonesPlayer(built, resolveImage: bones.imageFor);
+    final player = DragonBonesPlayer(built, assets: bones);
     final animations = built.armatureData.animationNames;
     if (animations.isNotEmpty) {
       player.play(animations.first);

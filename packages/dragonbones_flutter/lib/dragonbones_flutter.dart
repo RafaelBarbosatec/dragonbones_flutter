@@ -4,7 +4,7 @@
 /// Everything hangs off two methods, so it works anywhere:
 ///
 /// ```dart
-/// final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+/// final player = DragonBonesPlayer(armature, assets: assets);
 /// player.play('walk');
 ///
 /// // in your frame loop / ticker

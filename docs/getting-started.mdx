@@ -67,7 +67,7 @@ final assets = await DragonBonesAssets.loadAsset(
 );
 
 final armature = assets.buildArmature('Dragon')!;
-final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+final player = DragonBonesPlayer(armature, assets: assets);
 
 player.play('walk');
 ```
@@ -167,11 +167,33 @@ up with the same numbers.
 | `fitWidth` / `fitHeight` | Match one axis; the other follows the aspect ratio. |
 | `none` | Leave `scale`/`offset` alone. |
 
-`fit` measures the **current** pose, so call it after the first `update`. A clip
-whose silhouette changes a lot — a sword swing — would otherwise resize the box
-mid-animation; pass a fixed `bounds` to pin it:
+`fit` measures the **current** pose unless you give it something stable. Build
+the player with the `assets` you already have, and it gets a stable box for free:
+the first `fit` measures once, across every clip (using a throwaway armature, so
+the live one is never disturbed), and caches it.
 
 ```dart
+// If you built the armature yourself:
+final player = DragonBonesPlayer(armature, assets: assets);
+
+// ...or let the assets build it for you (it is on `player.armature`):
+final player = assets.createPlayer('mecha_2903d');
+
+player.fit(size: size, fit: DragonBonesFit.contain, align: Alignment.topLeft);
+```
+
+With `assets`, `resolveImage` is wired too, so you do not pass it either. The
+box is stable — a sword swing cannot resize it — and `fit` does not build a draw
+list just to place the character.
+
+When you want the box of the frame being drawn instead (a tight hitbox, say),
+there are two ways to ask:
+
+```dart
+// Force a measurement of the current pose...
+player.fit(size: size, useCurrentPose: true);
+
+// ...or pin an explicit box and skip measuring entirely.
 player.fit(size: size, bounds: poseBoundsAtRest);
 ```
 

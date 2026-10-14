@@ -83,7 +83,7 @@ final assets = await DragonBonesAssets.loadAsset(
 );
 
 final armature = assets.buildArmature('Dragon')!;
-final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+final player = DragonBonesPlayer(armature, assets: assets);
 player.play('walk');
 ```
 
@@ -256,6 +256,11 @@ Ordered by what a real game project would hit first.
       is skipped and `Surface` bones are built as plain bones, so neither deforms
       its geometry.
 
+`test/fixtures/features/` already holds the assets for the last four items —
+`shizuku` (slotAlpha, slotZIndex, Surface and blend) and a `.dbbin` container,
+fetched by `tool/ground_truth/fetch_features.sh`. They are staged, not swept:
+each joins the oracle comparison when its feature lands.
+
 **Wanted, not blocking**
 
 - [ ] **An engine component package** — a ready-made component that owns an
@@ -282,10 +287,13 @@ Ordered by what a real game project would hit first.
 tool/ground_truth/dump.js            headless oracle: official runtime -> JSON
 tool/ground_truth/fetch_runtime.sh   fetches + compiles the official TS runtime
 tool/ground_truth/fetch_fixtures.sh  fetches the Unity SDK demo assets
+tool/ground_truth/fetch_features.sh  fetches the staged feature fixtures
+tool/ground_truth/feature_usage.py   which fixture exercises which gap
 tool/ground_truth/run_all.sh         regenerates every reference dump
 tool/ground_truth/out/*.json         committed reference dumps (the whole sweep)
 test/fixtures/                       hand-picked assets used by both sides
 test/fixtures/unity/                 Unity SDK sweep (JSON committed, PNGs not)
+test/fixtures/features/              staged assets for unimplemented features
 packages/dragonbones/                pure Dart runtime (no deps, no Flutter)
 packages/dragonbones_flutter/        Canvas renderer: update() + render()
 example/                             minimal Flutter app (Dragon / mecha / 龙)

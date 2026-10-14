@@ -55,7 +55,7 @@ final assets = await DragonBonesAssets.loadAsset(
 );
 
 final armature = assets.buildArmature('Dragon')!;
-final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+final player = DragonBonesPlayer(armature, assets: assets);
 
 player.play('walk');
 
@@ -75,10 +75,13 @@ DragonBonesWidget(
 ```
 
 `fit` handles placement: `player.fit(size: size, fit: DragonBonesFit.contain,
-align: Alignment.topLeft)` measures the pose and writes `scale`/`offset`, so an
-engine component only has to pass its box. The modes are `contain`, `cover`,
-`fitWidth`, `fitHeight` and `none`, and `computeBounds()` gives you the pose's
-bounds for hitboxes. For a fully manual placement, set `player.scale` and
+align: Alignment.topLeft)` writes `scale`/`offset`, so an engine component only
+has to pass its box. The modes are `contain`, `cover`, `fitWidth`, `fitHeight`
+and `none`. Build the player with `assets:` (or `assets.createPlayer(...)`) and
+the first `fit` measures a stable box across every clip once — placement then
+does not move with the animation, and `fit` does not measure per frame. Without
+`assets`, `fit` uses the current pose, and `computeBounds()` gives you that
+pose's bounds for hitboxes. For a fully manual placement, set `player.scale` and
 `player.offset`, or pass them per call to `render()`.
 
 ## What it draws

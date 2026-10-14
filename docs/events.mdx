@@ -178,7 +178,7 @@ class _HeroState extends State<Hero> {
   @override
   void initState() {
     super.initState();
-    player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+    player = DragonBonesPlayer(armature, assets: assets);
     player.armature.eventDispatcher
         .addDBEventListener(EventObject.COMPLETE, _onComplete);
     player.play('idle');

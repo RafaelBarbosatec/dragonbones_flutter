@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import 'package:dragonbones/dragonbones.dart' as db;
 import 'package:flutter/widgets.dart';
 
+import 'assets.dart';
+
 /// Resolves the atlas image that backs a texture.
 ///
 /// The renderer never loads files itself — it just asks where the pixels for a
@@ -59,22 +61,56 @@ enum DragonBonesFit {
 class DragonBonesPlayer {
   DragonBonesPlayer(
     this.armature, {
-    required this.resolveImage,
+    AtlasImageResolver? resolveImage,
+    DragonBonesAssets? assets,
+    this.skinName,
     this.scale = 1.0,
     this.offset = Offset.zero,
-  });
+    this.skeletonBounds,
+  })  : assert(resolveImage != null || assets != null,
+            'Pass resolveImage, or assets to resolve it from'),
+        resolveImage = resolveImage ?? assets!.imageFor,
+        _assets = assets;
 
   /// The armature being drawn. Owned by the caller.
   final db.Armature armature;
 
   /// Where the atlas pixels come from.
+  ///
+  /// Defaults to [DragonBonesAssets.imageFor] when the player is built with
+  /// [assets]; pass an explicit resolver to draw from somewhere else.
   final AtlasImageResolver resolveImage;
+
+  final DragonBonesAssets? _assets;
+
+  /// Whether [_stableBounds] already ran; separate from [skeletonBounds] being
+  /// non-null so a measurement that found nothing is not repeated every frame.
+  bool _boundsMeasured = false;
+
+  /// The skin the armature was built with, if any.
+  ///
+  /// Only used to measure [skeletonBounds] from [DragonBonesAssets]; the live
+  /// armature is what is drawn.
+  final String? skinName;
 
   /// Extra uniform scale applied on top of the armature's own scale.
   double scale;
 
   /// Translation applied before drawing, in canvas units.
   Offset offset;
+
+  /// Stable bounds to place against, independent of the current frame.
+  ///
+  /// When set, [fit] uses these instead of measuring the pose, so an animated
+  /// silhouette cannot make the placement jump and no draw list is built just
+  /// to place the character.
+  ///
+  /// You normally do not set this yourself: build the player with
+  /// [DragonBonesAssets] (or use [DragonBonesAssets.createPlayer]) and the
+  /// first [fit] measures it once, across every animation, using a throwaway
+  /// armature. Assign it explicitly only when you need a different box — a
+  /// hand-authored one, or a re-measure after a skin swap.
+  Rect? skeletonBounds;
 
   /// Whether to draw deformable meshes. Meshes are drawn as triangle lists via
   /// `Canvas.drawVertices`; turning this off skips them (and counts them in
@@ -127,39 +163,32 @@ class DragonBonesPlayer {
   ///
   /// Computed from the sprite quads and the posed mesh vertices, so it moves
   /// with the animation. Returns null when there is nothing to draw.
-  Rect? computeBounds() {
-    Rect? result;
+  ///
+  /// For a box that does **not** move with the animation, use [skeletonBounds]
+  /// (see [fit]) — this method rebuilds the draw list on every call, which is
+  /// exactly why placement should not depend on it once a stable box exists.
+  Rect? computeBounds() => boundsOfDrawList(drawList);
 
-    void include(double x, double y) {
-      result = result == null
-          ? Rect.fromLTWH(x, y, 0, 0)
-          : result!.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
+  /// [skeletonBounds], measured from [DragonBonesAssets] on first use.
+  ///
+  /// Lazy on purpose: a player placed by hand never pays for the sweep, and a
+  /// player that is placed measures exactly once.
+  Rect? _stableBounds() {
+    if (skeletonBounds != null) {
+      return skeletonBounds;
     }
-
-    for (final data in drawList) {
-      if (!data.visible || data.texture == null) {
-        continue;
-      }
-      final m = data.matrix;
-
-      final mesh = data.mesh;
-      if (mesh != null) {
-        // A mesh has no quad: its extent is the posed triangle list, already in
-        // armature space but still to be transformed by the slot matrix.
-        for (var i = 0; i < mesh.vertices.length; i += 2) {
-          final px = mesh.vertices[i];
-          final py = mesh.vertices[i + 1];
-          include(m.a * px + m.c * py + m.tx, m.b * px + m.d * py + m.ty);
-        }
-        continue;
-      }
-
-      for (final corner in data.localQuad) {
-        include(m.a * corner[0] + m.c * corner[1] + m.tx,
-            m.b * corner[0] + m.d * corner[1] + m.ty);
-      }
+    if (_boundsMeasured) {
+      return null;
     }
-    return result;
+    final assets = _assets;
+    if (assets == null) {
+      return null;
+    }
+    _boundsMeasured = true;
+    return skeletonBounds = assets.measureBounds(
+      armatureName: armature.armatureData.name,
+      skinName: skinName,
+    );
   }
 
   /// Places the armature inside a `size` box and writes the result to [scale]
@@ -168,60 +197,80 @@ class DragonBonesPlayer {
   /// This is the bridge the engine examples need: an engine component knows the
   /// box it occupies (`size`) and where inside it the art should sit ([align]),
   /// but not the armature's extent or its origin. Rather than recompute
-  /// `scale`/`offset` by hand every time, call this once after posing the first
-  /// frame:
+  /// `scale`/`offset` by hand every time:
   ///
   /// ```dart
   /// // Flame / Bonfire component
   /// @override
   /// Future<void> onLoad() async {
-  ///   _player = DragonBonesPlayer(armature, resolveImage: assets.imageFor)
+  ///   _player = DragonBonesPlayer(armature, assets: assets)
   ///     ..play('idle')
-  ///     ..update(0);
-  ///
-  ///   _player.fit(
-  ///     size: Size(size.x, size.y),
-  ///     fit: DragonBonesFit.contain,
-  ///     align: Alignment.topLeft,
-  ///   );
+  ///     ..fit(
+  ///       size: Size(size.x, size.y),
+  ///       fit: DragonBonesFit.contain,
+  ///       align: Alignment.topLeft,
+  ///     );
   /// }
   ///
   /// @override
   /// void render(Canvas canvas) => _player.render(canvas);
   /// ```
   ///
-  /// The placement is derived from the **current** pose. Call it again after a
-  /// clip whose silhouette differs a lot (or pass a fixed [bounds], for example
-  /// the union of every clip, computed once) if you want the box to stay put
-  /// while the animation changes shape.
+  /// Because the player was built with [DragonBonesAssets], the first `fit`
+  /// measures a stable box across every clip (a throwaway armature, so the live
+  /// one is never disturbed) and caches it in [skeletonBounds]. The box then
+  /// never moves, and no draw list is built just to place the character.
+  ///
+  /// The bounds are resolved in this order:
+  ///
+  /// 1. an explicit [bounds] argument,
+  /// 2. [skeletonBounds] — the stable box, measured on first use when the
+  ///    player was built with [DragonBonesAssets],
+  /// 3. the **current** pose ([computeBounds]) unless [useCurrentPose] forces it.
+  ///
+  /// With a stable box the placement is computed once and never again, which is
+  /// what a game component wants. Without [DragonBonesAssets] (a hand-built
+  /// armature), `fit` falls back to the pose, so a clip whose silhouette differs
+  /// a lot can make the box jump — pass a fixed [bounds] (the union of the
+  /// clips), or build the player with `assets:` so it measures one. Use
+  /// [useCurrentPose] when you specifically want the box of the frame being
+  /// drawn (a tight hitbox, say).
+  ///
+  /// [align] positions the scaled art inside the box the way Flutter's `Align`
+  /// does: the content is placed in whatever space is left over, so it touches
+  /// the aligned edge and never leaves the box. `Alignment.bottomCenter`, for
+  /// example, puts the character's feet on the bottom edge — not half of it
+  /// below the box. With `cover` (which overflows an axis) the crop is centred
+  /// on the alignment instead.
   ///
   /// Nothing happens when [fit] is [DragonBonesFit.none], when [size] is empty,
-  /// or when the pose has no extent — the existing [scale]/[offset] are left
+  /// or when the bounds have no extent — the existing [scale]/[offset] are left
   /// untouched, which is what lets a widget opt out and keep a manual placement.
   ///
-  /// Returns the bounds that were fitted, or null when there was no pose.
+  /// Returns the bounds that were fitted, or null when there were none.
   Rect? fit({
     required Size size,
     DragonBonesFit fit = DragonBonesFit.contain,
     Alignment align = Alignment.center,
     Rect? bounds,
+    bool useCurrentPose = false,
   }) {
-    final pose = bounds ?? computeBounds();
+    final rect = bounds ??
+        (useCurrentPose
+            ? computeBounds()
+            : (_stableBounds() ?? computeBounds()));
 
     if (fit == DragonBonesFit.none ||
         size.isEmpty ||
-        pose == null ||
-        pose.isEmpty) {
-      return pose;
+        rect == null ||
+        rect.isEmpty) {
+      return rect;
     }
 
-    // `Alignment` runs -1..1 on each axis; remap it to 0..1 so it can scale the
-    // box extent directly (`Alignment.center` -> 0.5, `topLeft` -> 0, ...).
-    final alignX = (align.x + 1) / 2;
-    final alignY = (align.y + 1) / 2;
-
-    final sx = size.width / pose.width;
-    final sy = size.height / pose.height;
+    // `Alignment` runs -1..1 on each axis; the placement below remaps it to
+    // 0..1 and applies it to the free space left after scaling.
+    final sx = size.width / rect.width;
+    final sy = size.height / rect.height;
     final s = switch (fit) {
       DragonBonesFit.cover => math.max(sx, sy),
       DragonBonesFit.fitWidth => sx,
@@ -230,14 +279,24 @@ class DragonBonesPlayer {
     };
 
     scale = s;
-    // `pose.center` is drawn at `offset + center * s`; pin that to the aligned
-    // point of the box.
+
+    // Place the scaled bounds inside the box. `align` runs -1..1 on each axis;
+    // remap it to 0..1 and apply it to the *free space* left over after
+    // scaling, so the content touches the aligned edge without leaving the box
+    // — the same semantics as Flutter's `Align`/`FittedBox`. When `cover`
+    // overflows an axis the free space is negative, and the content crops
+    // symmetrically around the alignment instead.
+    final freeX = size.width - rect.width * s;
+    final freeY = size.height - rect.height * s;
+    final alignX = (align.x + 1) / 2;
+    final alignY = (align.y + 1) / 2;
+
     offset = Offset(
-      size.width * alignX - pose.center.dx * s,
-      size.height * alignY - pose.center.dy * s,
+      freeX * alignX - rect.left * s,
+      freeY * alignY - rect.top * s,
     );
 
-    return pose;
+    return rect;
   }
 
   /// Draws the current pose.
@@ -425,6 +484,49 @@ class DragonBonesPlayer {
 
     canvas.restore();
   }
+}
+
+/// Bounding box of a draw list, in armature coordinates.
+///
+/// Sprites contribute their posed quad; deformable meshes contribute their
+/// posed triangle vertices. Slots that are invisible, or that have no texture,
+/// are skipped. Returns null when nothing is drawable.
+///
+/// This is the geometry behind [DragonBonesPlayer.computeBounds], exposed so a
+/// throwaway armature can be measured without going through a player.
+Rect? boundsOfDrawList(List<db.SlotDrawData> drawList) {
+  Rect? result;
+
+  void include(double x, double y) {
+    result = result == null
+        ? Rect.fromLTWH(x, y, 0, 0)
+        : result!.expandToInclude(Rect.fromLTWH(x, y, 0, 0));
+  }
+
+  for (final data in drawList) {
+    if (!data.visible || data.texture == null) {
+      continue;
+    }
+    final m = data.matrix;
+
+    final mesh = data.mesh;
+    if (mesh != null) {
+      // A mesh has no quad: its extent is the posed triangle list, already in
+      // armature space but still to be transformed by the slot matrix.
+      for (var i = 0; i < mesh.vertices.length; i += 2) {
+        final px = mesh.vertices[i];
+        final py = mesh.vertices[i + 1];
+        include(m.a * px + m.c * py + m.tx, m.b * px + m.d * py + m.ty);
+      }
+      continue;
+    }
+
+    for (final corner in data.localQuad) {
+      include(m.a * corner[0] + m.c * corner[1] + m.tx,
+          m.b * corner[0] + m.d * corner[1] + m.ty);
+    }
+  }
+  return result;
 }
 
 /// Maps a DragonBones blend mode onto Flutter's.

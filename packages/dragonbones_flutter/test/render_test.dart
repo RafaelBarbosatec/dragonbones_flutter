@@ -89,33 +89,40 @@ void main() {
     expect(player.scale, closeTo(100 / 80, 1e-9));
   });
 
-  test('fit honours the alignment anchor', () async {
+  test('fit aligns the content inside the box without overflowing', () async {
     final assets = await _loadFixture('Dragon', local: true);
     final armature = assets.buildArmature('Dragon')!;
     final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
 
-    // A 40x40 pose whose centre is (30, 40).
+    // A 40x40 pose whose top-left is (10, 20).
     const bounds = ui.Rect.fromLTWH(10, 20, 40, 40);
     const box = ui.Size(200, 100);
     const fittedScale = 2.5; // min(200/40, 100/40)
 
-    player.fit(
-      size: box,
-      bounds: bounds,
-      align: Alignment.topLeft,
-    );
+    // topLeft: the box's top-left is the pose's top-left.
+    player.fit(size: box, bounds: bounds, align: Alignment.topLeft);
     expect(player.scale, closeTo(fittedScale, 1e-9));
-    // The pose centre lands on the top-left of the box.
-    expect(player.offset.dx + 30 * fittedScale, closeTo(0, 1e-9));
-    expect(player.offset.dy + 40 * fittedScale, closeTo(0, 1e-9));
+    expect(player.offset.dx + bounds.left * fittedScale, closeTo(0, 1e-9));
+    expect(player.offset.dy + bounds.top * fittedScale, closeTo(0, 1e-9));
 
-    player.fit(
-      size: box,
-      bounds: bounds,
-      align: Alignment.bottomRight,
-    );
-    expect(player.offset.dx + 30 * fittedScale, closeTo(200, 1e-9));
-    expect(player.offset.dy + 40 * fittedScale, closeTo(100, 1e-9));
+    // bottomRight: the pose's bottom-right is the box's bottom-right.
+    player.fit(size: box, bounds: bounds, align: Alignment.bottomRight);
+    expect(player.offset.dx + bounds.right * fittedScale, closeTo(200, 1e-9));
+    expect(player.offset.dy + bounds.bottom * fittedScale, closeTo(100, 1e-9));
+
+    // bottomCenter: feet on the bottom edge, horizontally centred, and the
+    // whole pose stays inside the box (the old bug put half of it below).
+    player.fit(size: box, bounds: bounds, align: Alignment.bottomCenter);
+    final left = player.offset.dx + bounds.left * fittedScale;
+    final right = player.offset.dx + bounds.right * fittedScale;
+    final top = player.offset.dy + bounds.top * fittedScale;
+    final bottom = player.offset.dy + bounds.bottom * fittedScale;
+    expect(bottom, closeTo(100, 1e-9), reason: 'feet on the bottom edge');
+    expect(top, greaterThanOrEqualTo(-1e-6), reason: 'stays inside');
+    expect(left, greaterThanOrEqualTo(-1e-6), reason: 'stays inside');
+    expect(right, lessThanOrEqualTo(200 + 1e-6), reason: 'stays inside');
+    expect((left + right) / 2, closeTo(100, 1e-9),
+        reason: 'horizontally centred');
   });
 
   test('fit leaves a manual placement alone when it cannot fit', () async {
@@ -164,6 +171,127 @@ void main() {
       (drawnCenter - ui.Offset(box.width / 2, box.height / 2)).distance,
       lessThan(1e-6),
     );
+  });
+
+  test('measureBounds encloses every pose of every animation', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final bounds = assets.measureBounds(armatureName: 'Dragon');
+    if (bounds == null) {
+      fail('measureBounds returned null for Dragon');
+    }
+
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+
+    for (final animation in armature.armatureData.animationNames) {
+      player.play(animation);
+      for (var frame = 0; frame < 30; frame++) {
+        player.update(1 / 24);
+        final pose = player.computeBounds();
+        if (pose == null) {
+          continue;
+        }
+        expect(bounds.left, lessThanOrEqualTo(pose.left + 1e-3),
+            reason: '$animation frame $frame: left');
+        expect(bounds.top, lessThanOrEqualTo(pose.top + 1e-3),
+            reason: '$animation frame $frame: top');
+        expect(bounds.right, greaterThanOrEqualTo(pose.right - 1e-3),
+            reason: '$animation frame $frame: right');
+        expect(bounds.bottom, greaterThanOrEqualTo(pose.bottom - 1e-3),
+            reason: '$animation frame $frame: bottom');
+      }
+    }
+  });
+
+  test('skeletonBounds makes fit independent of the current pose', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor)
+      // A 2:1 stable box, so contain fills the width exactly.
+      ..skeletonBounds = const ui.Rect.fromLTWH(0, 0, 200, 100);
+
+    player.fit(size: const ui.Size(200, 100), fit: DragonBonesFit.contain);
+    expect(player.scale, closeTo(1.0, 1e-9));
+
+    // Moving the animation must not move the placement.
+    player.play('walk');
+    player.update(1 / 24);
+    player.fit(size: const ui.Size(200, 100), fit: DragonBonesFit.contain);
+    expect(player.scale, closeTo(1.0, 1e-9));
+
+    // `useCurrentPose` opts back into measuring the frame being drawn.
+    final pose = player.computeBounds()!;
+    player.fit(
+      size: const ui.Size(200, 100),
+      fit: DragonBonesFit.contain,
+      useCurrentPose: true,
+    );
+    expect(
+      player.scale,
+      closeTo(math.min(200 / pose.width, 100 / pose.height), 1e-9),
+    );
+  });
+
+  test('building with assets measures the skeleton bounds on first fit',
+      () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    final player = DragonBonesPlayer(armature, assets: assets);
+
+    expect(player.skeletonBounds, isNull,
+        reason: 'measuring is lazy, not a constructor cost');
+
+    player.play('walk');
+    player.update(1 / 24);
+    player.fit(size: const ui.Size(200, 200), fit: DragonBonesFit.contain);
+    expect(player.skeletonBounds, isNotNull,
+        reason: 'the first fit measures it behind the scenes');
+
+    // Once measured, the placement no longer depends on the animation played.
+    final scale = player.scale;
+    player.play('stand');
+    player.update(1 / 24);
+    player.fit(size: const ui.Size(200, 200), fit: DragonBonesFit.contain);
+    expect(player.scale, scale);
+  });
+
+  test('createPlayer wires the image resolver and the bounds', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final player = assets.createPlayer('Dragon');
+
+    expect(player.armature.armatureData.name, 'Dragon');
+
+    player.play('stand');
+    player.update(0);
+    final atlas = player.drawList
+        .firstWhere((data) => data.texture != null)
+        .texture!
+        .parent!;
+    expect(player.resolveImage(atlas), isNotNull,
+        reason: 'assets.imageFor should have been wired in');
+
+    player.fit(size: const ui.Size(200, 200));
+    expect(player.skeletonBounds, isNotNull);
+    expect(player.scale, greaterThan(0));
+
+    expect(() => assets.createPlayer('does_not_exist'), throwsStateError);
+  });
+
+  test('measureBounds leaves a live armature untouched', () async {
+    final assets = await _loadFixture('Dragon', local: true);
+    final armature = assets.buildArmature('Dragon')!;
+    armature.animation.play('walk', 1);
+    armature.advanceTime(1 / 24);
+
+    final before = armature.animation.lastAnimationState!;
+    final name = before.name;
+    final time = before.currentTime;
+
+    assets.measureBounds(armatureName: 'Dragon');
+
+    final after = armature.animation.lastAnimationState!;
+    expect(after.name, name, reason: 'the live animation must not switch');
+    expect(after.currentTime, time, reason: 'the live playhead must not move');
   });
 
   test('poses and paints a deformable mesh (drawVertices)', () async {

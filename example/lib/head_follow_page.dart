@@ -87,7 +87,7 @@ class _HeadFollowPageState extends State<HeadFollowPage>
         throw StateError('armature "Dragon" not found');
       }
 
-      final player = DragonBonesPlayer(armature, resolveImage: assets.imageFor);
+      final player = DragonBonesPlayer(armature, assets: assets);
       player.play(); // default animation
       player.update(1 / 60); // seed the pose
 
