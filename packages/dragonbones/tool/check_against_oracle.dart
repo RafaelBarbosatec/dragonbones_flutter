@@ -76,6 +76,10 @@ const List<Target> namedTargets = <Target>[
   // 0.5 bone alpha must land on the effective 0.125 the oracle dumps.
   Target('feature_alpha', '$_fixtures/features/alpha/alpha_ske.json', '$_fixtures/features/alpha/alpha_tex.json',
       'alpha_test', 'idle', 'alpha'),
+  // SlotZIndex, hand-authored: two slots whose draw order swaps when the
+  // timeline moves `front` ahead of `back` and back again.
+  Target('feature_zindex', '$_fixtures/features/zindex/zindex_ske.json', '$_fixtures/features/zindex/zindex_tex.json',
+      'zindex_test', 'idle', 'zindex'),
 ];
 
 /// One entry per `out/unity__*.json`, resolved back to its source files.

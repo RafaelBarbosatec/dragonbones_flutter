@@ -539,6 +539,55 @@ class AlphaTimelineState extends SingleValueTimelineState {
 }
 
 /// @internal
+///
+/// Animates a slot's z-index. When it blends it sets `_zIndexDirty`, and the
+/// armature re-sorts its slots and re-stamps `_zOrder` on the next update — so
+/// this changes the draw order, not just a number.
+///
+/// Ported from `.ref/dragonBones-ts/animation/TimelineState.ts`
+/// (`SlotZIndexTimelineState`). Like [AlphaTimelineState] it is a blend
+/// timeline: the target is a [BlendState], so animation layers accumulate.
+class SlotZIndexTimelineState extends SingleValueTimelineState {
+  @override
+  void _onArriveAtFrame() {
+    super._onArriveAtFrame();
+
+    if (this._timelineData == null) {
+      // Pose: the slot's own z-index.
+      final BlendState blendState = this.target as BlendState;
+      final Slot slot = blendState.target as Slot;
+      this._result = slot.slotData.zIndex.toDouble();
+    }
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    this._valueOffset = this._animationData!.frameIntOffset;
+    this._valueArray = this._animationData!.parent!.parent!.frameIntArray;
+  }
+
+  @override
+  void blend(bool isDirty) {
+    final BlendState blendState = this.target as BlendState;
+    final Slot slot = blendState.target as Slot;
+    final double blendWeight = blendState.blendWeight;
+
+    if (blendState.dirty > 1) {
+      slot._zIndex += this._result * blendWeight;
+    } else {
+      slot._zIndex = this._result * blendWeight;
+    }
+
+    if (isDirty || this.dirty) {
+      this.dirty = false;
+      this._armature!._zIndexDirty = true;
+    }
+  }
+}
+
+/// @internal
 class SlotDisplayTimelineState extends TimelineState {
   @override
   void _onArriveAtFrame() {

@@ -38,6 +38,8 @@ node tool/ground_truth/dump.js example/assets/mecha_1004d/ske.json \
 # runtime evaluates are dumped; the rest join here as their features land.
 node tool/ground_truth/dump.js "$FIX/features/alpha/alpha_ske.json" \
   "$FIX/features/alpha/alpha_tex.json" idle "$OUT/feature_alpha.json" alpha_test
+node tool/ground_truth/dump.js "$FIX/features/zindex/zindex_ske.json" \
+  "$FIX/features/zindex/zindex_tex.json" idle "$OUT/feature_zindex.json" zindex_test
 
 # ------------------------------------------------------------ Unity SDK sweep
 # Every demo asset from DragonBones/DragonBonesUnity, one dump each.

@@ -95,7 +95,6 @@ mostly animate, then be subtly wrong rather than fail loudly.
   applied (and verified). **Animated** IK weight/bend is ignored.
 - **Path constraints** (`PathConstraint`) — data parsed, never built.
 - **`Surface` bones** (`SurfaceTimelineState`) — model classes only.
-- **`SlotZIndex` timeline** — static z-order works; an animated z-index is ignored.
 - **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`,
   `AnimationParameter`).
 - **Binary `.dragonbones` input** (`BinaryDataParser`) — JSON export only.

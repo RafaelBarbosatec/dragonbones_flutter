@@ -1,0 +1,90 @@
+{
+  "frameRate": 24,
+  "name": "zindex_test",
+  "version": "5.5",
+  "compatibleVersion": "5.5",
+  "armature": [
+    {
+      "type": "Armature",
+      "frameRate": 24,
+      "name": "zindex_test",
+      "aabb": {
+        "x": -64,
+        "y": -10,
+        "width": 74,
+        "height": 20
+      },
+      "bone": [
+        {
+          "name": "root"
+        }
+      ],
+      "slot": [
+        {
+          "name": "back",
+          "parent": "root"
+        },
+        {
+          "name": "front",
+          "parent": "root"
+        }
+      ],
+      "skin": [
+        {
+          "name": "",
+          "slot": [
+            {
+              "name": "back",
+              "display": [
+                {
+                  "name": "bullet_01_f/bullet_01"
+                }
+              ]
+            },
+            {
+              "name": "front",
+              "display": [
+                {
+                  "name": "bullet_01_f/bullet_01",
+                  "transform": {
+                    "x": 20
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "animation": [
+        {
+          "duration": 24,
+          "name": "idle",
+          "timeline": [
+            {
+              "name": "front",
+              "type": 23,
+              "frame": [
+                {
+                  "duration": 8,
+                  "value": 0
+                },
+                {
+                  "duration": 8,
+                  "value": -10
+                },
+                {
+                  "duration": 8,
+                  "value": 10
+                },
+                {
+                  "duration": 0,
+                  "value": 0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

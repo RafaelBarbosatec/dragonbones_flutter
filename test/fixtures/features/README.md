@@ -1,11 +1,11 @@
-# Staged feature fixtures
+# Feature fixtures
 
-Assets for features the runtime **parses but does not evaluate yet**. They are
-committed here so the roadmap work has real, reproducible material to implement
-and verify against — they are deliberately **not** in the oracle sweep, which
-picks each one up when its feature lands.
+Assets for the timeline features: the hand-authored `alpha` and `zindex` ones are
+already in the oracle sweep, and the downloaded ones (`shizuku`, the binary
+container) are committed so the remaining work has real, reproducible material —
+they stay out of the sweep until their features land.
 
-Fetch/refresh them with:
+Fetch/refresh the downloaded ones with:
 
 ```bash
 tool/ground_truth/fetch_features.sh
@@ -14,11 +14,12 @@ tool/ground_truth/fetch_features.sh
 The revisions are pinned in that script. `tool/ground_truth/feature_usage.py`
 reports which of these features each fixture exercises.
 
-| Fixture | Exercises | Blocks on |
+| Fixture | Exercises | Status |
 | --- | --- | --- |
-| `alpha/alpha_ske.json` | `slotAlpha` + `boneAlpha`, hand-authored in the `timeline` format | **swept** already (`feature_alpha`) |
-| `shizuku/shizuku_ske.json` | `slotZIndex` (36 timelines), `Surface` (117 bones, 198 timelines), animation `blendType` (progress/parameter), plus `slotAlpha` | Surface bones + the zIndex/blend timelines |
-| `binary/mecha_1002_101d_show_ske.dbbin` | the binary `.dragonbones` container (`DBDT` magic, embedded JSON) | the binary data parser |
+| `alpha/alpha_ske.json` | `slotAlpha` + `boneAlpha`, hand-authored in the `timeline` format | **swept** (`feature_alpha`) |
+| `zindex/zindex_ske.json` | `slotZIndex`, hand-authored in the `timeline` format | **swept** (`feature_zindex`) |
+| `shizuku/shizuku_ske.json` | `Surface` (117 bones, 198 timelines), animation `blendType` (progress/parameter), plus `slotAlpha`/`slotZIndex` | staged — blocks on Surface + blend |
+| `binary/mecha_1002_101d_show_ske.dbbin` | the binary `.dragonbones` container (`DBDT` magic, embedded JSON) | staged — blocks on the binary parser |
 
 ## alpha
 
@@ -27,6 +28,13 @@ array format, with a `slotAlpha` timeline on the slot and a `boneAlpha` timeline
 on the child bone. It is the first feature fixture in the oracle sweep
 (`feature_alpha`): the effective alpha is `0.25` (slot) × `0.5` (bone) = `0.125`
 on the frames where both are active.
+
+## zindex
+
+A minimal armature (one bone, two slots) hand-authored in the `timeline` format,
+with a `slotZIndex` timeline on `front`. The draw order flips from
+`[back, front]` to `[front, back]` and back, which the oracle confirms frame by
+frame (`feature_zindex`).
 
 ## shizuku
 

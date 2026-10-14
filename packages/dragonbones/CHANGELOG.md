@@ -20,6 +20,19 @@
   the SDK demos predate alpha timelines — is checked frame by frame: a `0.25`
   slot alpha under a `0.5` bone alpha lands on the effective `0.125`.
 
+**`SlotZIndex` timeline.** A slot's z-index can now be animated. When it blends
+it sets `_zIndexDirty`, and the armature re-sorts its slots and re-stamps
+`_zOrder` on the next update — so the draw order actually changes, not just a
+number.
+
+- New `SlotZIndexTimelineState` (ported from upstream), wired into the slot
+  timeline switch with `BlendState.SLOT_Z_INDEX`.
+- `Slot._zIndex` is now a `double`, matching upstream's `number` (a blended
+  z-index can be fractional; the sort only compares it).
+- Verified by `test/fixtures/features/zindex`, hand-authored with two slots whose
+  order swaps: the draw list is `[back, front]`, then `[front, back]`, then
+  `[back, front]`, matching the official runtime exactly.
+
 ## 0.2.0
 
 **Animation events.** The runtime no longer only *draws* an animation — it

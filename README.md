@@ -205,7 +205,6 @@ rather than crash loudly. That is the dangerous kind, so it is spelled out.
 | **IK constraint timelines** (`IKConstraintTimelineState`) | not ported | **Static** IK is applied and verified. **Animated** IK weight/bend is ignored — a rig that animates its IK targets will drift. `_updateTimelines()` is a no-op. |
 | **Path constraints** (`PathConstraint`) | data parsed, never built | Bones meant to follow a path do not. |
 | **`Surface` bones** (`SurfaceTimelineState`) | model only | `SurfaceData`/`Surface` exist; the timeline is never created, so surfaces do not deform. |
-| **`SlotZIndex` timeline** | not ported | Static z-order from the armature data works. A timeline animating z-index is ignored, so draw order will be wrong mid-animation. |
 | **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | not ported | Blending between animations (`AnimationBlendType`) is not evaluated. |
 | **Binary `.dragonbones` input** (`BinaryDataParser`) | not ported | JSON export only. |
 
@@ -247,8 +246,8 @@ Ordered by what a real game project would hit first.
 - [ ] **`IKConstraintTimelineState`.** Static IK is solved and verified; an
       *animated* IK weight/bend is not. `_updateTimelines()` is a no-op, so a rig
       that animates its IK is silently wrong.
-- [ ] **`SlotZIndex` timeline.** Static z-order works; the per-slot `SlotZIndex`
-      timeline is ignored, so draw order can be wrong mid-animation.
+- [x] **`SlotZIndex` timeline.** Done in `[NEXT]`: the armature re-sorts its
+      slots when the z-index changes, verified against the official runtime.
 - [x] **`SlotAlpha` / `BoneAlpha` timelines.** Done in `[NEXT]`: both are wired
       into the timeline switch and verified against the official runtime (a
       hand-authored fixture, since the SDK demos predate alpha timelines).
@@ -256,10 +255,10 @@ Ordered by what a real game project would hit first.
       is skipped and `Surface` bones are built as plain bones, so neither deforms
       its geometry.
 
-`test/fixtures/features/` already holds the assets for the remaining items —
-`shizuku` (slotAlpha, slotZIndex, Surface and blend) and a `.dbbin` container,
-fetched by `tool/ground_truth/fetch_features.sh`. They are staged, not swept:
-each joins the oracle comparison when its feature lands.
+`test/fixtures/features/` holds the assets for the remaining items — `shizuku`
+(Surface and animation blend) and a `.dbbin` container, fetched by
+`tool/ground_truth/fetch_features.sh` — plus the hand-authored `alpha` and
+`zindex` fixtures, which are already in the oracle sweep.
 
 **Wanted, not blocking**
 

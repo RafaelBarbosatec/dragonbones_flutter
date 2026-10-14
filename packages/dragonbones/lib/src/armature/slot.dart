@@ -147,7 +147,9 @@ abstract class Slot extends TransformObject {
   int _zOrder = 0;
 
   /// @internal
-  int _zIndex = 0;
+  // Upstream keeps this a `number` so a blended z-index can be fractional; the
+  // sort only ever compares it (`_zIndex * 1000 + _zOrder`).
+  double _zIndex = 0.0;
 
   /// @internal
   double _pivotX = 0.0;
@@ -254,7 +256,7 @@ abstract class Slot extends TransformObject {
     this._displayIndex = -1;
     this._animationDisplayIndex = -1;
     this._zOrder = 0;
-    this._zIndex = 0;
+    this._zIndex = 0.0;
     this._cachedFrameIndex = -1;
     this._pivotX = 0.0;
     this._pivotY = 0.0;
@@ -563,7 +565,7 @@ abstract class Slot extends TransformObject {
     this._blendModeDirty = true;
     this._blendMode = this._slotData!.blendMode;
     this._zOrder = this._slotData!.zOrder;
-    this._zIndex = this._slotData!.zIndex;
+    this._zIndex = this._slotData!.zIndex.toDouble();
     this._alpha = this._slotData!.alpha;
     this._colorTransform.copyFrom(this._slotData!.color);
     this._rawDisplay = rawDisplay;

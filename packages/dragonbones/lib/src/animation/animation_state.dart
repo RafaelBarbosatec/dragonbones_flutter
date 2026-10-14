@@ -409,7 +409,15 @@ class AnimationState extends BaseObject {
                     break;
                   }
 
-                // Milestone 2: SlotZIndex timelines are not ported.
+                case TimelineType.SlotZIndex:
+                  {
+                    final timeline = SlotZIndexTimelineState();
+                    timeline.target = this._armature!.animation.getBlendState(BlendState.SLOT_Z_INDEX, slot.name, slot);
+                    timeline.init(this._armature!, this, timelineData);
+                    this._slotBlendTimelines.add(timeline);
+                    break;
+                  }
+
                 default:
                   break;
               }
