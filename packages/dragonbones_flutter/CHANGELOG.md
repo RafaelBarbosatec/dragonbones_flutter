@@ -1,14 +1,40 @@
 # Changelog
 
-## [NEXT]
+## 0.4.0
 
-**Placement is now the player's job.** `DragonBonesPlayer.fit` writes
-`scale`/`offset` from the box you render into, so a Flame/Bonfire component no
-longer computes them by hand:
+**Stable placement, and the newer timelines reach the Canvas.**
+
+- Build a `DragonBonesPlayer` with `DragonBonesAssets` —
+  `DragonBonesPlayer(armature, assets: assets)` — and the image resolver is wired
+  for you; `DragonBonesAssets.createPlayer(name)` builds the armature too. No
+  manual `resolveImage:` or `measureBounds` call.
+- `DragonBonesPlayer.skeletonBounds` + `DragonBonesAssets.measureBounds`: the
+  first `fit` measures the union across every animation **once** (using a
+  throwaway armature, so the live one is never disturbed) and caches it.
+  Placement then stops depending on the current frame, and `fit` no longer builds
+  a draw list just to place the character.
+- `fit` resolves bounds as: explicit `bounds`, then `skeletonBounds`, then the
+  current pose — `useCurrentPose: true` forces the last.
+- `fit`'s `align` now positions the scaled art inside the leftover space
+  (Flutter `Align` semantics), so it touches the aligned edge without leaving the
+  box: `Alignment.bottomCenter` is feet on the bottom, not half the character
+  below.
+- Depend on `dragonbones: ^0.3.0`, so `SlotAlpha` / `BoneAlpha` and `SlotZIndex`
+  reach the Canvas (the effective alpha rides in the slot colour, the draw list
+  arrives pre-sorted). No renderer code changed for those.
+
+Requires `dragonbones: ^0.3.0`.
+
+## 0.3.0
+
+**Placement is now the player's job.** `DragonBonesPlayer.fit` measures the
+current pose and writes `scale`/`offset` from the box you render into, so a
+Flame/Bonfire component no longer computes them by hand:
 
 ```dart
-final player = assets.createPlayer('mecha_2903d')
+player
   ..play('idle')
+  ..update(0)
   ..fit(
     size: Size(size.x, size.y),
     fit: DragonBonesFit.contain,
@@ -19,25 +45,13 @@ final player = assets.createPlayer('mecha_2903d')
 - `DragonBonesFit` gains `cover`, `fitWidth` and `fitHeight` alongside
   `contain` and `none`. `fit` also takes an optional `bounds` to pin a clip
   whose silhouette changes (a sword swing), and returns the bounds it fitted.
-  `align` positions the scaled art inside the leftover space (Flutter `Align`
-  semantics), so it touches the aligned edge without leaving the box —
-  `Alignment.bottomCenter` is feet on the bottom, not half the character below.
-- Building a `DragonBonesPlayer` with `assets:` (or `assets.createPlayer(...)`)
-  wires the image resolver and gives `fit` a stable box: the first `fit`
-  measures the union across every animation **once** and caches it in
-  `DragonBonesPlayer.skeletonBounds`. Placement then stops depending on the
-  current frame, and `fit` no longer builds a draw list just to place the
-  character. `DragonBonesAssets.measureBounds` poses a throwaway armature, so a
-  live one is never disturbed.
-- `fit` resolves bounds as: explicit `bounds`, then `skeletonBounds`, then the
-  current pose — `useCurrentPose: true` forces the last.
 - `computeBounds()` moves from the `DragonBonesPlayerGeometry` extension onto
   `DragonBonesPlayer` itself; the call site (`player.computeBounds()`) is
   unchanged.
 - `DragonBonesWidget` delegates its own fit to `player.fit`, so the widget and a
   hand-written engine component place an armature with the same numbers.
 - The Bonfire example drops its manual `min(...)`/`abs()` placement in favour of
-  the method (and measures its skeleton bounds once).
+  the method.
 
 Requires `dragonbones: ^0.2.0`.
 

@@ -7,13 +7,13 @@
 Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
 exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
-> **Status: 0.2.0 released, 0.3.0 pending — feature-complete for the common case,
-> not for everything.** Both packages are on pub.dev:
+> **Status: 0.4.0 — feature-complete for the common case, not for everything.**
+> Both packages are on pub.dev:
 > [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). Both are at `0.3.0` in this repository, waiting for their release
-> commits — see [Limitations](#limitations) for exactly what is missing: a
-> short, specific list, not a vague disclaimer.
+> renderer). The runtime's `0.3.0` is out; the renderer's `0.4.0` is in this
+> repository, waiting for its release commit — see [Limitations](#limitations)
+> for exactly what is missing: a short, specific list, not a vague disclaimer.
 
 ## The premise
 
@@ -71,7 +71,7 @@ That is also why the geometry can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.3.0
+  dragonbones_flutter: ^0.4.0
 ```
 
 ```dart
@@ -347,14 +347,14 @@ atlas's `SubTexture` regions verified against the real PNG
 
 ## Releases
 
-Both packages are on pub.dev. `0.3.0` is prepared in this repository for each of
-them, waiting for its release commit; the CHANGELOG entries say what they add.
-Publish the runtime first — the renderer's `0.3.0` depends on it.
+Both packages are on pub.dev. `dragonbones` `0.3.0` is released; the renderer's
+`0.4.0` is prepared in this repository, waiting for its release commit. Its
+CHANGELOG entry says what it adds.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| `dragonbones` | `0.2.0` | `0.3.0` |
-| `dragonbones_flutter` | `0.2.0` | `0.3.0` |
+| `dragonbones` | `0.3.0` | `0.3.0` |
+| `dragonbones_flutter` | `0.3.0` | `0.4.0` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,
