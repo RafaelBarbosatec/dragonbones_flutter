@@ -169,6 +169,11 @@ The full list, including what is verified and how, is on the documentation site:
 and
 **[Architecture & verification](https://docs.page/RafaelBarbosatec/dragonbones_flutter/architecture)**.
 
+## Where download DragonBones
+
+[windows](https://drive.google.com/drive/u/0/folders/1XNtDIuOG3ocBe3MqQAtjFp8MJq_ZCmCm)
+[Macos](https://drive.google.com/drive/u/0/folders/1BiPx2eeefRUubr__iEUfmBqlJKNuvJc2)
+
 ## Licence
 
 MIT. The DragonBones runtime and format are MIT (© DragonBones team and
