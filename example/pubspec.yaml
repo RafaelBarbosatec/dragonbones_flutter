@@ -26,6 +26,7 @@ flutter:
   assets:
     - assets/bounding_box_tester/
     - assets/bullet_01/
+    - assets/demon/
     - assets/dragon/
     - assets/floor_board/
     - assets/mecha_1002_101d_light/

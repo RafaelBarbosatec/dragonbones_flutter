@@ -8,6 +8,7 @@
 const List<String> kExampleAssets = <String>[
   'bounding_box_tester',
   'bullet_01',
+  'demon',
   'dragon',
   'floor_board',
   'mecha_1002_101d_light',
