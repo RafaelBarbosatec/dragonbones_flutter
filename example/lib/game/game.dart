@@ -1,4 +1,5 @@
 import 'package:bonfire/bonfire.dart';
+import 'package:dragonbones_example/game/background_game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,7 +21,7 @@ class GameExample extends StatefulWidget {
 }
 
 class _GameExampleState extends State<GameExample> {
-  static final Vector2 _mapSize = Vector2(1200, 550);
+  static final Vector2 _mapSize = Vector2(1200, 500);
 
   @override
   Widget build(BuildContext context) {
@@ -54,33 +55,43 @@ class _GameExampleState extends State<GameExample> {
                 color: Colors.red,
                 margin: const EdgeInsets.only(bottom: 60, right: 130),
               ),
+              JoystickAction(
+                actionId: LogicalKeyboardKey.keyG,
+                size: 60,
+                color: Colors.green,
+                margin: const EdgeInsets.only(bottom: 160, right: 40),
+              ),
             ],
           ),
         ],
         player: ScorpionPlayer(
-          position: Vector2(60, 0),
-          size: Vector2(200, 160),
+          position: Vector2(60, 100),
+          size: Vector2(300, 300),
         ),
         // Gravity is a global force: it is applied to every component that uses
         // `WithForces`, so the player only has to turn the mixin on.
         globalForces: GlobalForcesSettings(gravity: Vector2(0, 600)),
         components: [
+          BackgroundGame(_mapSize),
           Floor(
-            size: Vector2(_mapSize.x, 32),
-            position: Vector2(0, _mapSize.y - 32),
+            size: Vector2(_mapSize.x, 80),
+            position: Vector2(0, _mapSize.y - 60),
+            color: Colors.transparent,
           ),
           Floor(
-            size: Vector2(220, 32),
-            position: Vector2(360, _mapSize.y - 162),
+            size: Vector2(32, _mapSize.y),
+            position: Vector2(-32, 0),
+            color: Colors.transparent,
           ),
           Floor(
-            size: Vector2(220, 32),
-            position: Vector2(700, _mapSize.y - 282),
-            color: const Color(0xFF1565C0),
+            size: Vector2(32, _mapSize.y),
+            position: Vector2(_mapSize.x, 0),
+            color: Colors.transparent,
           ),
         ],
         cameraConfig: CameraConfig(
           initialMapZoomFit: InitialMapZoomFitEnum.fitHeight,
+          moveOnlyMapArea: true,
         ),
       ),
     );

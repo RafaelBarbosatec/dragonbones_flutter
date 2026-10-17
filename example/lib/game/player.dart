@@ -37,6 +37,12 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
   /// Seconds left of a one-shot clip (attack). While it runs it owns the pose.
   double _actionTimer = 0;
 
+  final String _idleAnimationName = 'steady';
+  final String _runAnimationName = 'run';
+  final String _attackAnimationName = 'normalAttack';
+  final String _attack2AnimationName = 'uniqueAttack';
+  final String _winAnimationName = 'win';
+
   @override
   Future<void> onLoad() async {
     await _loadDragonBones();
@@ -45,8 +51,8 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
     // platforms without bumping its head into them.
     add(
       RectangleHitbox(
-        position: Vector2(0, size.y / 2),
-        size: Vector2(size.x, size.y / 2 - 15),
+        position: Vector2(size.x / 2.2, size.y / 1.5),
+        size: Vector2(size.x / 6, size.y / 4),
       ),
     );
   }
@@ -59,10 +65,11 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
     // actions and no jump until it finishes.
     if (event.event == ActionEvent.DOWN && _actionTimer <= 0) {
       if (event.id == LogicalKeyboardKey.space) {
-        // ~150 px of apex with the game's gravity of 600.
-        jumper.jump(jumpSpeed: 430);
+        _startAction(_attack2AnimationName);
       } else if (event.id == LogicalKeyboardKey.keyF) {
-        _startAction('skill_04');
+        _startAction(_attackAnimationName);
+      } else if (event.id == LogicalKeyboardKey.keyG) {
+        _startAction(_winAnimationName);
       }
     }
     super.onJoystickAction(event);
@@ -100,7 +107,7 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
       return; // A one-shot clip is still owning the pose.
     }
     // This rig has no jump/fall clip, so locomotion is enough while airborne.
-    _play(_moving ? 'walk' : 'idle');
+    _play(_moving ? _runAnimationName : _idleAnimationName);
   }
 
   void _play(String clip) {
@@ -150,25 +157,26 @@ class ScorpionPlayer extends Player with WithForces, WithCollision, WithJumper {
   Future<void> _loadDragonBones() async {
     final assets = await DragonBonesAssets.loadAsset(
       bundle: rootBundle,
-      skeleton: 'assets/mecha_2903/ske.json',
-      texture: 'assets/mecha_2903/tex.json',
-      image: 'assets/mecha_2903/tex.png',
+      skeleton: 'assets/demon/ske.json',
+      texture: 'assets/demon/tex.json',
+      image: 'assets/demon/tex.png',
     );
 
     // Built with `assets`, so the first `fit` measures a stable box across every
     // clip by itself — no `measureBounds`, no `resolveImage` to wire.
-    _player = assets.createPlayer('mecha_2903d');
+    _player = assets.createPlayer('armatureName');
     _armature = _player.armature;
     // Pose the first frame so the very first render is not blank.
-    _player.play('idle');
+    _player.play(_idleAnimationName);
     _player.update(0);
 
     // Stable placement from the component box; writes `scale` and `offset`.
     _player.fit(
       size: Size(size.x, size.y),
-      fit: DragonBonesFit.contain,
+      fit: DragonBonesFit.fitHeight,
       align: Alignment.bottomCenter,
     );
+    _player.scale = _player.scale * 3; // Shrink a bit to fit the floor.
     _animation = 'idle';
   }
 }

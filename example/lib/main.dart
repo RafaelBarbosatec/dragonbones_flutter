@@ -175,7 +175,6 @@ class _DemoPageState extends State<DemoPage> {
                       : DragonBonesWidget(
                           player: player,
                           animation: _animation,
-                          fit: DragonBonesFit.contain,
                         ),
             ),
           ),

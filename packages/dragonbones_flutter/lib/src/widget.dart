@@ -16,6 +16,7 @@ class DragonBonesWidget extends StatefulWidget {
     this.animation,
     this.playing = true,
     this.fit = DragonBonesFit.contain,
+    this.align = Alignment.center,
   });
 
   final DragonBonesPlayer player;
@@ -27,6 +28,8 @@ class DragonBonesWidget extends StatefulWidget {
   final bool playing;
 
   final DragonBonesFit fit;
+
+  final Alignment align;
 
   @override
   State<DragonBonesWidget> createState() => _DragonBonesWidgetState();
@@ -94,6 +97,7 @@ class _DragonBonesWidgetState extends State<DragonBonesWidget>
         player: widget.player,
         repaint: _repaint,
         fit: widget.fit,
+        align: widget.align,
       ),
       size: Size.infinite,
     );
@@ -104,19 +108,21 @@ class _DragonBonesPainter extends CustomPainter {
   _DragonBonesPainter({
     required this.player,
     required this.repaint,
-    required this.fit,
+    this.fit = DragonBonesFit.contain,
+    this.align = Alignment.center,
   }) : super(repaint: repaint);
 
   final DragonBonesPlayer player;
   final Listenable repaint;
   final DragonBonesFit fit;
+  final Alignment align;
 
   @override
   void paint(Canvas canvas, Size size) {
     // `fit` computes and stores the placement; for `DragonBonesFit.none` (or
     // an empty box / pose) it is a no-op, so a hand-authored scale/offset on
     // the player survives.
-    player.fit(size: size, fit: fit);
+    player.fit(size: size, fit: fit, align: align);
     player.render(canvas);
   }
 
