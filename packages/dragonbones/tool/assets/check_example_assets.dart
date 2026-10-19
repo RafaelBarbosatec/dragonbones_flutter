@@ -13,7 +13,8 @@
 //      `SubTexture` region fitting inside the image (a region that does not fit
 //      means the app would sample outside the atlas),
 //   5. checks that `example/pubspec.yaml` and `example/lib/asset_catalog.dart`
-//      list exactly the directories that exist.
+//      list exactly the directories that exist (o pubspec também declara
+//      assets avulsos, como `images/`; o catálogo lista só personagens).
 //
 // Run from the package directory:
 //   dart run tool/assets/check_example_assets.dart          # verify
@@ -99,7 +100,33 @@ String _pubspecHeader(String pubspec) {
   return pubspec.substring(0, marker + 1);
 }
 
-void _writeLists(Directory root, List<_Character> characters) {
+/// Directories under `assets/` que não são personagens, mas são declaradas
+/// como asset (ex.: `images/`, de onde o Flame carrega `magma_v2.png`).
+///
+/// Elas precisam aparecer em `example/pubspec.yaml`, mas NÃO no catálogo: o
+/// dropdown do app lista personagens, e `images/` não tem `ske.json`.
+List<String> _extraAssets(Directory assets, List<_Character> characters) {
+  final characterNames = {for (final c in characters) c.name};
+  final extras = <String>[];
+  for (final entity in assets.listSync(recursive: true)) {
+    if (entity is! Directory) continue;
+    final name = entity.path.substring(assets.path.length + 1).replaceAll(Platform.pathSeparator, '/');
+    if (characterNames.contains(name)) continue;
+    // Diretório-pai de um personagem (`you_xin/`, `you_xin/suit1/`) não tem
+    // arquivos próprios — declarar ele no pubspec duplicaria os filhos.
+    if (!entity.listSync().any((e) => e is File)) continue;
+    if (characterNames.any((c) => c.startsWith('$name/'))) continue;
+    extras.add(name);
+  }
+  extras.sort();
+  return extras;
+}
+
+void _writeLists(
+  Directory root,
+  List<_Character> characters,
+  List<String> extras,
+) {
   final names = <String>[for (final c in characters) c.name];
 
   final pubspec = File('${root.path}/example/pubspec.yaml');
@@ -109,6 +136,9 @@ void _writeLists(Directory root, List<_Character> characters) {
     ..writeln('  uses-material-design: true')
     ..writeln('  assets:');
   for (final name in names) {
+    buffer.writeln('    - assets/$name/');
+  }
+  for (final name in extras) {
     buffer.writeln('    - assets/$name/');
   }
   pubspec.writeAsStringSync(buffer.toString());
@@ -127,7 +157,8 @@ void _writeLists(Directory root, List<_Character> characters) {
     '];\n',
   );
 
-  print('wrote ${names.length} entries to example/pubspec.yaml and '
+  print('wrote ${names.length} characters + ${extras.length} extra assets to '
+      'example/pubspec.yaml, and ${names.length} entries to '
       'example/lib/asset_catalog.dart');
 }
 
@@ -157,13 +188,16 @@ void main(List<String> args) {
   if (characters.isEmpty) {
     throw StateError('no character directories under ${assets.path}');
   }
+  final extras = _extraAssets(assets, characters);
 
   if (args.contains('--write')) {
-    _writeLists(root, characters);
+    _writeLists(root, characters, extras);
     return;
   }
 
   final expected = <String>[for (final c in characters) c.name];
+  // O pubspec declara personagens + assets avulsos; o catálogo só personagens.
+  final expectedInPubspec = [...expected, ...extras];
   var failures = 0;
   void fail(String message) {
     failures++;
@@ -173,10 +207,10 @@ void main(List<String> args) {
   final declared = _declaredInPubspec(
     File('${root.path}/example/pubspec.yaml'),
   );
-  if (declared.join('\n') != expected.join('\n')) {
+  if (declared.join('\n') != expectedInPubspec.join('\n')) {
     fail('example/pubspec.yaml asset list differs from the directories on '
         'disk — run with --write (declared ${declared.length}, '
-        'found ${expected.length})');
+        'found ${expectedInPubspec.length})');
   }
   final catalogue = _declaredInCatalog(
     File('${root.path}/example/lib/asset_catalog.dart'),
