@@ -38,7 +38,7 @@ which is also why every number it draws can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.4.0
+  dragonbones_flutter: ^0.4.1
 ```
 
 This pulls in [`dragonbones`](https://pub.dev/packages/dragonbones), the runtime,

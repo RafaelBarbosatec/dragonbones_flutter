@@ -11,9 +11,9 @@ exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 > Both packages are on pub.dev:
 > [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). The renderer's `0.4.0` is out; the runtime's `0.4.0` is in this
-> repository, waiting for its release commit. It adds **animated IK**,
-> **`Surface` bones** and **animation blending** — see [Limitations](#limitations)
+> renderer). The runtime's `0.4.0` is published — it adds **animated IK**,
+> **`Surface` bones** and **animation blending**. The renderer's `0.4.1`, in this
+> repository, is the release that depends on it. See [Limitations](#limitations)
 > for the two features still missing: a short, specific list, not a vague
 > disclaimer.
 
@@ -73,7 +73,7 @@ That is also why the geometry can be verified without a GPU.
 
 ```yaml
 dependencies:
-  dragonbones_flutter: ^0.4.0
+  dragonbones_flutter: ^0.4.1
 ```
 
 ```dart

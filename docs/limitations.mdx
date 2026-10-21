@@ -70,7 +70,7 @@ DragonBones player. If you need smooth IK weight, key it on more frames.
 
 | Item | Detail |
 | --- | --- |
-| **Five blend modes** | `Alpha`, `Erase`, `Invert`, `Layer` and `Subtract` have no exact counterpart in `dart:ui`, so the closest `ui.BlendMode` is used (`dstIn`, `dstOut`, `difference`, `srcOver`, `difference` respectively). The other nine — `Normal`, `Add`, `Multiply`, `Screen`, `Darken`, `Lighten`, `Overlay`, `HardLight`, `Difference` — map exactly. No fixture in the 51-asset set uses the approximated five, so they are **unverified**, not merely approximated. |
+| **Five blend modes** | `Alpha`, `Erase`, `Invert`, `Layer` and `Subtract` have no exact counterpart in `dart:ui`, so the closest `ui.BlendMode` is used (`dstIn`, `dstOut`, `difference`, `srcOver`, `difference` respectively). The other nine — `Normal`, `Add`, `Multiply`, `Screen`, `Darken`, `Lighten`, `Overlay`, `HardLight`, `Difference` — map exactly. No fixture in the 56-asset set uses the approximated five, so they are **unverified**, not merely approximated. |
 | **Rotated atlas entries** | A code path exists for regions stored rotated a quarter turn in the atlas, and it is marked unverified in-source. No fixture uses one. If your atlas packs rotated regions, validate this before shipping. |
 
 The mapping is in `packages/dragonbones_flutter/lib/src/player.dart` and is easy

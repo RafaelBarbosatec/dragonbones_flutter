@@ -54,7 +54,7 @@ lib/src/
   model/       the 5.x data model (armature, bone, slot, skin, display,
                animation, timeline, texture atlas, user data, constraints)
   parser/      ObjectDataParser — JSON, incl. packed binary frame arrays
-  armature/    Armature, Bone, Slot, TransformObject, IKConstraint
+  armature/    Armature, Bone, Surface, Slot, TransformObject, IKConstraint
   animation/   Animation, AnimationState, timeline states, BlendState
   render/      draw_data.dart, mesh_geometry.dart
   factory/     BaseFactory, HeadlessFactory
@@ -162,19 +162,20 @@ but they share a common ancestor by construction, which is worth knowing.
 - **Appearance.** No GPU on a runner. The Flutter tests rasterise and count
   painted pixels — enough to prove nothing is silently skipped, not enough to
   prove it looks right.
-- **Features no asset uses.** A feature absent from all 51 assets is a feature
+- **Features no asset uses.** A feature absent from all 56 assets is a feature
   with zero coverage. The list of those is in [Limitations](/limitations).
 
 ## CI
 
-Four jobs, in `.github/workflows/ci.yml`:
+Five jobs, in `.github/workflows/ci.yml`:
 
 | Job | What it proves |
 | --- | --- |
 | **Oracle dumps reproducible** | Compiles the official runtime from source, regenerates every dump, and fails if the committed JSON changed. The oracle cannot rot. |
-| **dragonbones (pure Dart)** | `dart analyze`, the structural check (1,527 assertions over the parsed model), and the full oracle diff. No Flutter involved. |
-| **dragonbones_flutter (analyze + render)** | `flutter analyze` (infos are fatal here), then tests that replay **every fixture through the real renderer** with a synthetic atlas — asserting that sprites and meshes are actually drawn and that nothing is silently skipped. |
-| **example app** | `flutter analyze` on the example, so the documented usage keeps compiling. |
+| **dragonbones (pure Dart)** | `dart analyze`, formatting (what pub.dev scores), the structural check (1,527 assertions over the parsed model), the full pose oracle diff, the event-stream diff, the example-asset check and the tests. No Flutter involved. |
+| **dragonbones_flutter (analyze + render)** | `flutter analyze` (infos are fatal here), then tests that replay **every fixture through the real renderer** with a synthetic atlas — asserting that sprites and meshes are actually drawn and that nothing is silently skipped. It also `flutter analyze`s the example app, so the documented usage keeps compiling. |
+| **publish dry-run (runtime)** | `dart pub publish --dry-run`, so a packaging mistake is caught before the release, not at it. |
+| **docs.page (frontmatter, links, MDX)** | The documentation site builds from `docs/`; broken frontmatter, links or MDX fail here. |
 
 The renderer test deserves a note: it asserts that meshes *were* drawn, so the
 coverage cannot rot into a green test that draws nothing.
