@@ -7,13 +7,13 @@ Both packages are on pub.dev:
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.3.0 | **0.4.0**, pending release |
-| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.4.0 | 0.4.0 |
+| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.4.0 | 0.4.0 |
+| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.4.0 | **0.4.1**, pending release |
 
 A pub.dev release cannot be deleted — only retracted — so the trigger is always a
 human decision, never a CI side effect. This page is the release sequence for the
-next version: `dragonbones` 0.4.0 first, then a renderer release that raises its
-dependency range to it.
+next version: the renderer's `0.4.1`, which raises its runtime range to the
+already-published `dragonbones` 0.4.0.
 
 Check the current state at any time:
 
@@ -32,13 +32,11 @@ cd packages/dragonbones_flutter  && flutter pub publish --dry-run
 
 ## Why the order matters
 
-`dragonbones_flutter` depends on `dragonbones` through a **version range**
-(currently `^0.3.0`; the next renderer release raises it to the runtime version
-published in step 1):
+`dragonbones_flutter` depends on `dragonbones` through a **version range**:
 
 ```yaml
 dependencies:
-  dragonbones: ^0.3.0
+  dragonbones: ^0.4.0
 ```
 
 That is exactly why the runtime has to go out first: until the new `dragonbones`
@@ -89,7 +87,7 @@ flutter pub publish
 | `CHANGELOG.md` | ✅ | ✅ |
 | `README.md` | ✅ | ✅ |
 | Version bumped for the release | ⬜ per release | ⬜ per release |
-| No `path:` dependency | ✅ (no dependencies at all) | ✅ `dragonbones: ^0.3.0` |
+| No `path:` dependency | ✅ (no dependencies at all) | ✅ `dragonbones: ^0.4.0` |
 | `publish_to: none` removed | ✅ | ✅ |
 | `--dry-run` clean | ✅ gated in CI | ✅ |
 

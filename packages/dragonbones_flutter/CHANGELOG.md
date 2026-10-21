@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.1
+
+**Depend on `dragonbones: ^0.4.0`.** The runtime's 0.4.0 added animated IK,
+`Surface` bones and animation blending; this release raises the range so the
+renderer actually resolves it. No renderer code had to change: a `Surface`
+arrives already posed in the mesh, and animation blending is resolved in the
+armature before the draw list is built. This is a dependency release, not an API
+change.
+
+Requires `dragonbones: ^0.4.0`.
+
 ## 0.4.0
 
 **Stable placement, and the newer timelines reach the Canvas.**
