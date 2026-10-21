@@ -22,10 +22,7 @@ them throw. All of them will make your animation quietly wrong.
 
 | Feature | What is missing | What you will see |
 | --- | --- | --- |
-| **IK constraint timelines** (`IKConstraintTimelineState`) | `AnimationState._updateTimelines()` is a no-op, so no constraint timeline state is ever created. | **Static** IK (the `weight`/`bendPositive` in the armature data) is applied and verified. **Animated** IK is not: if the animation keys the IK weight, the limb follows the raw bone transforms instead — feet slide, hands miss targets. |
 | **Path constraints** (`PathConstraint`) | `PathConstraintData` is parsed into the model; the runtime class is never built. `Armature._buildConstraints` handles IK only. | A bone meant to travel along a path stays at its own transform. |
-| **`Surface` bones** (`SurfaceTimelineState`) | `SurfaceData` and `Surface` exist as model/armature classes; the timeline state is never created, and the bone/slot timeline switch has no `Surface` case. | Surface deformation does not happen. The bone behaves as a plain bone. |
-| **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | `AnimationState.addState` exists, but no timeline state is created, and `AnimationBlendType` (E1D / E2D blending) is never evaluated. | Blending one animation into another by parameter does not happen; child animation states do not drive the parent. |
 | **Binary `.dragonbones` input** (`BinaryDataParser`) | Only `ObjectDataParser` (JSON) exists. | A binary export will not parse at all — this one *does* fail loudly, which is the good kind. |
 
 ### How to tell if your asset is affected
@@ -35,19 +32,21 @@ skeleton JSON:
 
 | Look for | Meaning |
 | --- | --- |
-| `"ik"` inside an armature | It has IK constraints. Fine if the weight is constant or `0`; a problem if an animation keys it. |
 | `"path"` | Path constraints — not supported. |
-| `"type":1` in a `bone` entry | `BoneType.Surface` — Surface bones, not supported. |
-| `"type":50` in a timeline | `Surface` timeline — not supported. |
-| `"type":30` in a timeline | `IKConstraint` timeline — the IK weight is animated and will be ignored. |
-| `"type":23` in a `slot` timeline | `SlotZIndex` timeline — **supported** as of `[NEXT]`. |
-| `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — **supported** as of `[NEXT]`. |
+| `"ik"` inside an armature | IK constraints — **supported** (static since 0.3.0, animated since 0.4.0). |
+| `"type":1` in a `bone` entry | `BoneType.Surface` — **supported** as of 0.4.0. |
+| `"type":30` in a timeline | `IKConstraint` timeline — **supported** as of 0.4.0. |
+| `"type":40` / `41` / `42` in a timeline | Animation progress/weight/parameter — **supported** as of 0.4.0. |
+| `"type":50` in a timeline | `Surface` timeline — **supported** as of 0.4.0. |
+| `"blendType": "1d"` / `"2d"` | Animation blending — **supported** as of 0.4.0. |
+| `"type":23` in a `slot` timeline | `SlotZIndex` timeline — **supported** as of 0.3.0. |
+| `"type":24` / `"type":60` in a timeline | `SlotAlpha` / `BoneAlpha` timeline — **supported** as of 0.3.0. |
 
 (The timeline type numbers above are the ones this port uses; see
 `TimelineType` in `packages/dragonbones/lib/src/core/dragon_bones.dart`.)
 
 Two real examples from this repository's own fixtures, which is why the
-limitation is stated with such confidence:
+limitation was originally stated with such confidence:
 
 - The `龙` fixture has two IK constraints, but **both have `weight: 0`** — inert.
   They pass, and for a while they hid the fact that the `IKConstraint` class had
@@ -56,6 +55,16 @@ limitation is stated with such confidence:
   field. The parser default is `1.0`, so they are active — and they were the seven
   assets that failed until `IKConstraint` was ported. See
   [Investigation findings § 9.1](/findings).
+
+### One upstream quirk, reproduced on purpose
+
+`IKConstraintTimelineState` reads `_currentA` / `_currentB` — the value the
+timeline arrived at when it entered the segment — rather than the interpolated
+`_resultA` / `_resultB`. The official runtime does the same, so an animated IK
+weight **steps at frame boundaries instead of tweening**, and a keyframe with
+tweening disabled never applies at all. The port matches that exactly (verified
+frame by frame), because diverging would be a silent difference from every other
+DragonBones player. If you need smooth IK weight, key it on more frames.
 
 ## Approximated in the renderer
 
@@ -111,9 +120,15 @@ frame against the official DragonBones runtime:
   the same-named animation on its nested children — compared against the
   official runtime as a **sequence**, per fixture and per animation, in
   `tool/check_events_against_oracle.dart`,
-- z-order and action timelines.
+- z-order and action timelines,
+- **animated IK**: weight and `bendPositive` from an `IKConstraint` timeline,
+  including the upstream step-at-frame-boundary behaviour,
+- **`Surface` bones** and `Surface` timelines: the 117-bone vertex grid, the
+  per-cell affine transform and meshes posed through it,
+- **animation blending**: `AnimationProgress` / `AnimationWeight` /
+  `AnimationParameter` child states and `AnimationBlendType.E1D`.
 
-51 assets, 757,701 numeric comparisons and 1,919 events, 0 mismatches. The
+56 assets, 1,353,695 numeric comparisons and 1,919 events, 0 mismatches. The
 numbers, the method and the caveats (including that the mesh oracle is the
 official *Egret binding*, not the core runtime) are in
 [Architecture & verification](/architecture#verification)

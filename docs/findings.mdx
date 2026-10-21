@@ -327,9 +327,90 @@ single asset, and 606 nested child slots in one.
 
 - **Appearance.** A runner has no GPU. The Flutter tests rasterise and count
   painted pixels, which catches "wired wrong, drew nothing" — not "looks wrong".
-- **Unported features.** `PathConstraint` and `Surface` bones. No asset in this
-  set needs them, so their absence is invisible here; it would not be for a
-  project that does.
+- **Unported features.** `PathConstraint` and `Surface` bones (the latter landed
+  later, in §10). No asset in this set needs them, so their absence is invisible
+  here; it would not be for a project that does.
 
 Keeping those two sentences next to the green numbers is the difference between a
 verification and a claim.
+
+## 10. Animated IK, `Surface` bones and animation blending
+
+The three gaps that were "parsed but not evaluated" until now. Each had a
+different reason for being hard, and only one of them was about maths.
+
+### 10.1 Animated IK is not a tween
+
+The port had `IKConstraint` (static IK) but `_updateTimelines()` was empty, so a
+timeline that keyed the weight was never instantiated. Wiring it looked trivial —
+`IKConstraintTimelineState` is thirty lines — and the first implementation read
+the interpolated `_resultA` / `_resultB`, which is what every other timeline
+state does.
+
+That failed the oracle on frame 1 of the hand-authored fixture. The official
+runtime reads `_currentA` / `_currentB`, the value the timeline *arrived at* when
+it entered the segment. Consequences, both visible in the dump:
+
+- the weight **steps at frame boundaries** instead of tweening;
+- a keyframe with tweening disabled never applies at all, because `_current` is
+  only filled on arrival with a tween (`SingleValueTimelineState._onArriveAtFrame`).
+
+This is plainly an upstream bug — `_current` is stale by design elsewhere — but it
+is upstream's behaviour, and a port whose premise is "matches the official
+runtime" cannot quietly improve it. It is reproduced and documented in
+[Limitations](/limitations#one-upstream-quirk-reproduced-on-purpose). The fixture
+(`test/fixtures/features/ik`) keys weight `0 → 1 → 0.5` and flips
+`bendPositive`; disabling `_updateTimelines()` makes it fail with an 18° error,
+which is how the test was proven to have teeth.
+
+### 10.2 `Surface` is geometry, and the oracle was missing it
+
+`Surface` is a vertex grid (segmentX × segmentY) whose affine transform is
+interpolated per cell. Three pieces:
+
+1. `_buildBones` was creating a plain `Bone` for every bone; it now creates
+   `Surface` for `BoneType.Surface`. That alone was a crash: slots cast their
+   parent to `Surface`.
+2. The full `Surface` port: `init` (grid sizes, `dX`/`dY`/`k*`), `update`
+   (rebuild vertices, hull cache), `_updateGlobalTransformMatrix` (middle-cell
+   affine) and `_getGlobalTransformMatrix(x, y)` (per-cell matrix with a cache).
+3. `SurfaceTimelineState` blending into `_deformVertices`, plus the surface branch
+   in the mesh builder — a mesh parented to a surface is posed through
+   `_getGlobalTransformMatrix` per vertex, not through one matrix.
+
+The first oracle run failed with ~700-unit errors on the mesh vertices while
+**every bone matrix matched**. The cause was the oracle, not the port:
+`tool/ground_truth/dump.js` transcribed the skinned branch of
+`EgretSlot._updateMesh` but omitted the `isSurface` branch. Adding it (with the
+`BoneType` const-enum inlined, since it does not exist at runtime) turned the
+comparison green at 5e-7.
+
+That is worth recording as a general lesson: when only one *side* of a
+comparison implements a feature, a perfect port looks broken. The check was the
+bone matrices — they were already identical.
+
+### 10.3 Blending is the same state machine, just wired
+
+`AnimationState.update()` already contained the full `AnimationBlendType`
+evaluation (nearest-child selection by `parameterX`, weight distribution). What
+was missing was the *creation* of child states: `addState()` was a no-op and
+`Animation.playConfig` never iterated `animationData.animationTimelines`. Porting
+the two loops (and the three timeline states that drive the children's time,
+weight and parameter) was enough.
+
+Proven the same way as IK: disabling the child-state loop makes the
+`shizuku-blend` target fail with an 18-unit offset on frame 1.
+
+### 10.4 Final numbers
+
+```
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
+RESULT: PASS
+```
+
+The new coverage: `features/ik` (animated IK), and two capped runs of `shizuku`
+(135 bones, 131 slots, 117 of them `Surface`) for surface deformation and
+blending. The 12-frame cap is a size decision — a full clip is a 21 MB dump —
+and the surface deform is constant across the clip, so the geometry is fully
+exercised.

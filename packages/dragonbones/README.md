@@ -52,19 +52,19 @@ tool/check_against_oracle.dart   replays every fixture frame by frame and compar
 Result on the current commit:
 
 ```
-757701 numeric comparisons over 51 assets (51 clean, 0 failing)
-74245 mesh values, 1228 nested-armature slots
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
 ~5e-7 is the rounding precision of the reference dumps themselves, so the port is
 effectively exact. Both scripts run in CI on every push.
 
-The 51 assets are the hand-picked ladder (`Dragon`, `龙`, `mecha_1004d`) plus the
-entire DragonBones **Unity SDK** demo set — nested armatures, skinned meshes,
-animated FFD, active IK constraints and skin swapping. One of them
-(`you_xin/body`) is 71 frames, 70 bones, 6,816 slot draw data and 47,357 mesh
-values in a single asset.
+The 56 assets are the hand-picked ladder (`Dragon`, `龙`, `mecha_1004d`), the
+entire DragonBones **Unity SDK** demo set, and the feature fixtures — animated
+IK, `Surface` bones and animation blending. One of them (`you_xin/body`) is 71
+frames, 70 bones, 6,816 slot draw data and 47,357 mesh values in a single asset;
+another (`shizuku`) has 117 `Surface` bones.
 
 ## What is implemented
 
@@ -75,10 +75,11 @@ values in a single asset.
 - **parser**: `ObjectDataParser` for the **text/JSON** format, including the
   packed binary frame arrays that format 5.5 embeds in the JSON
 - **armature**: `Armature`, `Bone`, `Slot` (render hooks left abstract),
-  `TransformObject`, `IKConstraint`
+  `TransformObject`, `IKConstraint`, `Surface`
 - **animation**: `WorldClock`, `Animation`, `AnimationState` and the timeline
   states — bone all/translate/rotate/scale, slot display/colour, action, z-order,
-  and **deform (FFD)**
+  **deform (FFD)**, **animated IK**, **`Surface` deformation**, **animation
+  blending (`AnimationProgress`/`Weight`/`Parameter`)**, and alpha/z-index
 - **events**: `EventObject` and `IEventDispatcher` — frame events and sound
   events placed on the timeline, the `start` / `loopComplete` / `complete` /
   `fadeIn` / `fadeOut` lifecycle events, and `gotoAndPlay` actions, all
@@ -91,13 +92,12 @@ values in a single asset.
 Each of these is *parsed* but not *evaluated*, so a file using it will load and
 mostly animate, then be subtly wrong rather than fail loudly.
 
-- **IK constraint timelines** (`IKConstraintTimelineState`) — **static** IK is
-  applied (and verified). **Animated** IK weight/bend is ignored.
 - **Path constraints** (`PathConstraint`) — data parsed, never built.
-- **`Surface` bones** (`SurfaceTimelineState`) — model classes only.
-- **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`,
-  `AnimationParameter`).
 - **Binary `.dragonbones` input** (`BinaryDataParser`) — JSON export only.
+
+That is the whole list. **Animated IK**, **`Surface` bones** and **animation
+blending** were implemented in `0.4.0` and are verified against the official
+runtime.
 
 ## Deviations from upstream (deliberate)
 

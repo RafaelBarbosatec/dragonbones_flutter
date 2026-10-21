@@ -1,5 +1,82 @@
 # Changelog
 
+## 0.4.0
+
+**Animated IK, `Surface` bones and animation blend nodes.** Three features that
+the parser already decoded but the runtime never executed now reach the
+armature: an IK constraint follows its timeline, a `Surface` bone deforms its
+mesh through a per-cell affine transform, and an export that nests one animation
+inside another starts and drives those child states. A skeleton JSON that embeds
+its own atlases (`"textureAtlas"`) also loads without registering the atlas by
+hand.
+
+**Animated IK constraints.** `AnimationState._updateTimelines()` was a no-op, so
+`IKConstraintTimeline` data was parsed and silently dropped: a constraint kept
+its static `weight` / `bendPositive` for the whole clip.
+
+- `IKConstraintTimelineState` is wired into the constraint switch, plus the pose
+  timeline that restores the constraint's rest values when an animation declares
+  no IK timeline for it.
+- The frame semantics are upstream's, including the non-obvious part: the
+  official runtime reads `_currentA` / `_currentB` — the value the timeline
+  arrived at the *start* of the segment — not the interpolated `_resultA` /
+  `_resultB`. An animated weight therefore **steps** at frame boundaries instead
+  of tweening, and a non-tween frame never applies. That is reproduced
+  deliberately: "fixing" it would be a silent divergence from every other
+  DragonBones player.
+- Verified by a hand-authored fixture (`test/fixtures/features/ik`): no asset in
+  the SDK animates IK — they only use it statically — so the fixture drives
+  `weight` and `bendPositive` across frames. The pose oracle compares it frame
+  by frame (25 frames, 4 bones, max error 4.98e-7).
+
+**`Surface` bones.** `BaseFactory._buildBones` always created a plain `Bone`, so
+a skeleton with `"type": "surface"` crashed on the cast to `Surface` (and
+`SurfaceTimelineState` did not exist).
+
+- `Surface` is now created for `BoneType.Surface`: it builds its vertex grid,
+  applies the parent's transform per cell, caches the hull and the inside/outside
+  affine matrices, and rebuilds them when the deform data is dirty.
+- `SurfaceTimelineState` blends the frame's deform values into the surface and
+  marks the transform dirty; pose timelines for a surface are handled separately
+  from `BoneAllTimelineState`.
+- `buildMeshGeometry` accepts an optional `Surface` and poses each vertex through
+  `Surface`'s per-cell matrix instead of a single bone matrix — this was the
+  branch that used to be documented as unported.
+- Verified against `shizuku`, the only fixture that contains a Surface bone:
+  13 frames, 65.507 mesh values, max error 5.0e-7.
+
+**Animation blend nodes (`animationTimelines`).** The parser already produced
+`AnimationProgress` / `AnimationWeight` / `AnimationParameter` timeline data, but
+`AnimationState.addState()` was empty and `Animation._parseAnimations` did not
+exist, so nested animations were never started.
+
+- Playing a parent animation now fades in each animation named in
+  `animationData.animationTimelines`, disables its action, stops it at the parent's
+  timeline, and attaches it with its own blend timelines. Parent states are
+  ordered before their children so the parent is updated first.
+- `AnimationProgress` (E1D) drives the child's `positionX` / `positionY` and
+  `weight`; `AnimationWeight` and `AnimationParameter` follow the upstream
+  switch. The child's `weight` is applied through the normal blend states, so no
+  renderer change is needed.
+- Verified against `shizuku` (`blendType: E1D`): 13 frames, 65.507 mesh values,
+  max error 5.0e-7.
+
+**Embedded texture atlases.** `BaseFactory.parseDragonBonesData` registered the
+skeleton but not the atlases carried inside it, so single-file exports failed to
+resolve regions and fell back to the "region missing" placeholder. It now loops
+over the embedded `textureAtlas` entries and adds each one, matching the official
+runtime.
+
+**Oracle coverage.** The pose oracle went from 53 to 56 assets and from 759.801
+to **1.353.695 numeric comparisons** (205.259 mesh values over 1.228
+nested-armature slots), all within 5e-7; the event oracle still replays 174
+scenarios / 1.919 events. Two new test files (`ik_test.dart`,
+`shizuku_test.dart`) cover the features directly, and both were checked to fail
+with the feature disabled — 18° of IK error and 18 units of blend offset
+respectively — so they are not passing by accident.
+
+No public API change.
+
 ## 0.3.0
 
 **`SlotAlpha` / `BoneAlpha` timelines.** The alpha timelines from the newer

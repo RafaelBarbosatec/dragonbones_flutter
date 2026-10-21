@@ -135,6 +135,7 @@ MeshGeometry? buildMeshGeometry({
   required List<Bone?> bones,
   required List<double> deformVertices,
   required double scale,
+  Surface? surface,
 }) {
   final data = geometry.data;
   if (data == null || data.intArray == null || data.floatArray == null) {
@@ -221,12 +222,16 @@ MeshGeometry? buildMeshGeometry({
         y += deformVertices[i + 1];
       }
 
-      // NOTE: upstream branches here for `Surface` bones (a 4.x feature that
-      // remaps the vertices through a surface transform). BoneType.Surface is
-      // not ported — no supported fixture uses it — so the branch is omitted
-      // rather than faked.
-      vertices[i] = x;
-      vertices[i + 1] = y;
+      // NOTE: a mesh parented to a Surface bone is posed through that bone's
+      // per-cell affine transform, not through a single matrix.
+      if (surface != null) {
+        final matrix = surface._getGlobalTransformMatrix(x, y);
+        vertices[i] = matrix.a * x + matrix.c * y + matrix.tx;
+        vertices[i + 1] = matrix.b * x + matrix.d * y + matrix.ty;
+      } else {
+        vertices[i] = x;
+        vertices[i + 1] = y;
+      }
     }
   }
 

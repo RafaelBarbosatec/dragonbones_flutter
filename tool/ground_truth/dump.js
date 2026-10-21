@@ -161,6 +161,10 @@ class HeadlessSlot extends db.Slot {
       let vertexOffset = intArray[geometryData.offset + BO.GeometryFloatOffset];
       if (vertexOffset < 0) { vertexOffset += 65536; }
 
+      // BoneType is a `const enum`, so it is inlined and absent at runtime.
+      const isSurface = this._parent._boneData.type !== 0;
+      const surface = isSurface ? this._parent : null;
+
       for (let i = 0, l = vertexCount * 2; i < l; i += 2) {
         let x = floatArray[vertexOffset + i] * scale;
         let y = floatArray[vertexOffset + i + 1] * scale;
@@ -170,8 +174,14 @@ class HeadlessSlot extends db.Slot {
           y += deformVertices[i + 1];
         }
 
-        vertices[i] = x;
-        vertices[i + 1] = y;
+        if (isSurface) {
+          const matrix = surface._getGlobalTransformMatrix(x, y);
+          vertices[i] = matrix.a * x + matrix.c * y + matrix.tx;
+          vertices[i + 1] = matrix.b * x + matrix.d * y + matrix.ty;
+        } else {
+          vertices[i] = x;
+          vertices[i + 1] = y;
+        }
       }
     }
 
@@ -315,6 +325,9 @@ function main() {
   const animName = args[2] && args[2] !== '-' ? args[2] : null;
   const outPath = args[3] || null;
   const fixtureId = args[4] || path.basename(skePath);
+  // Optional cap, for very large assets (135 bones, 131 slots) where a full
+  // clip would produce a 20 MB dump. The Dart checker applies the same cap.
+  const maxFrames = args[5] ? parseInt(args[5], 10) : 0;
 
   const factory = new HeadlessFactory();
 
@@ -348,7 +361,8 @@ function main() {
   const frameRate = armature.armatureData.frameRate;
 
   const frames = [];
-  const totalFrames = Math.max(1, Math.round(duration * frameRate));
+  const fullFrames = Math.max(1, Math.round(duration * frameRate));
+  const totalFrames = maxFrames > 0 ? Math.min(fullFrames, maxFrames) : fullFrames;
   for (let f = 0; f <= totalFrames; f++) {
     if (f > 0) armature.advanceTime(1.0 / frameRate);
     frames.push({ frame: f, time: r(f / frameRate), state: dumpState(armature) });

@@ -1,0 +1,118 @@
+{
+  "frameRate": 24,
+  "name": "ik_test",
+  "version": "5.5",
+  "compatibleVersion": "5.5",
+  "armature": [
+    {
+      "type": "Armature",
+      "frameRate": 24,
+      "name": "ik_test",
+      "aabb": {
+        "x": -20,
+        "y": -200,
+        "width": 200,
+        "height": 260
+      },
+      "bone": [
+        {
+          "length": 0,
+          "name": "root"
+        },
+        {
+          "length": 80,
+          "name": "upper",
+          "parent": "root"
+        },
+        {
+          "length": 80,
+          "name": "lower",
+          "parent": "upper",
+          "x": 80
+        },
+        {
+          "name": "target",
+          "parent": "root",
+          "x": 120,
+          "y": -40
+        }
+      ],
+      "ik": [
+        {
+          "name": "ik",
+          "bone": "lower",
+          "target": "target",
+          "chain": 1,
+          "bendPositive": true,
+          "weight": 1
+        }
+      ],
+      "animation": [
+        {
+          "duration": 24,
+          "name": "idle",
+          "bone": [
+            {
+              "name": "target",
+              "translateFrame": [
+                {
+                  "duration": 12,
+                  "tweenEasing": 0,
+                  "x": 120,
+                  "y": -40
+                },
+                {
+                  "duration": 12,
+                  "tweenEasing": 0,
+                  "x": 110,
+                  "y": 70
+                },
+                {
+                  "duration": 0,
+                  "x": 120,
+                  "y": -40
+                }
+              ]
+            }
+          ],
+          "timeline": [
+            {
+              "name": "ik",
+              "type": 30,
+              "frame": [
+                {
+                  "duration": 8,
+                  "tweenEasing": 0,
+                  "x": 1,
+                  "y": 0
+                },
+                {
+                  "duration": 8,
+                  "tweenEasing": 0,
+                  "x": 0,
+                  "y": 1
+                },
+                {
+                  "duration": 8,
+                  "tweenEasing": 0,
+                  "x": 1,
+                  "y": 0.5
+                },
+                {
+                  "duration": 0,
+                  "x": 1,
+                  "y": 0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "defaultActions": [
+        {
+          "gotoAndPlay": "idle"
+        }
+      ]
+    }
+  ]
+}

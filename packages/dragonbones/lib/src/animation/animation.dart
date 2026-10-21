@@ -329,8 +329,33 @@ class Animation extends BaseObject {
       }
     }
 
-    // Still not ported: blend animation nodes (`animationData.animationTimelines`),
-    // i.e. AnimationBlendType.E1D. No fixture declares one — see `Limitations`.
+    // Blend animation nodes (`animationData.animationTimelines`): every child
+    // animation named as a blend node is started as a child state, time/weight/
+    // parameter driven by its own timelines, and attached to the parent state.
+    for (final blendAnimationName in animationData.animationTimelines.keys.toList()) {
+      final childAnimationState =
+          this.fadeIn(blendAnimationName, 0.0, 1, animationState.layer, '', AnimationFadeOutMode.Single);
+
+      if (childAnimationState == null) {
+        continue;
+      }
+
+      final timelines = animationData.animationTimelines[blendAnimationName]!;
+      childAnimationState.actionEnabled = false;
+      childAnimationState.resetToPose = false;
+      childAnimationState.stop();
+      animationState.addState(childAnimationState, timelines);
+
+      // The parent must be updated *before* its child: they can be adjacent in
+      // the state list, so swap the positions when they came out inverted.
+      final index = this._animationStates.indexOf(animationState);
+      final childIndex = this._animationStates.indexOf(childAnimationState);
+
+      if (childIndex < index) {
+        this._animationStates.removeAt(index);
+        this._animationStates.insert(childIndex, animationState);
+      }
+    }
 
     this._lastAnimationState = animationState;
 

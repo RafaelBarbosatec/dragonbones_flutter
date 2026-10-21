@@ -7,13 +7,15 @@
 Skeletal (bone-based) animation for **Dart** and **Flutter**, from animations
 exported by **DragonBones** — the free, MIT alternative to Spine and Rive.
 
-> **Status: 0.4.0 — feature-complete for the common case, not for everything.**
+> **Status: feature-complete for the common case, not for everything.**
 > Both packages are on pub.dev:
 > [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
 > [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-> renderer). The runtime's `0.3.0` is out; the renderer's `0.4.0` is in this
-> repository, waiting for its release commit — see [Limitations](#limitations)
-> for exactly what is missing: a short, specific list, not a vague disclaimer.
+> renderer). The renderer's `0.4.0` is out; the runtime's `0.4.0` is in this
+> repository, waiting for its release commit. It adds **animated IK**,
+> **`Surface` bones** and **animation blending** — see [Limitations](#limitations)
+> for the two features still missing: a short, specific list, not a vague
+> disclaimer.
 
 ## The premise
 
@@ -133,16 +135,16 @@ packages/dragonbones/  the pure-Dart port; a test replays the same frames and
 Measured on the current commit:
 
 ```
-757701 numeric comparisons over 51 assets (51 clean, 0 failing)
-74245 mesh values, 1228 nested-armature slots
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
 | What the sweep covers | How much |
 | --- | ---: |
-| Assets replayed, frame by frame | 51 |
-| **Numeric assertions compared** | **757,701** |
-| Mesh values (posed vertices, UVs, triangle indices) | 74,245 |
+| Assets replayed, frame by frame | 56 |
+| **Numeric assertions compared** | **1,353,695** |
+| Mesh values (posed vertices, UVs, triangle indices) | 205,259 |
 | Nested child-armature slots, with the parent slot's matrix composed on | 1,228 |
 | Worst relative error anywhere | ~5e-5 |
 
@@ -163,9 +165,11 @@ coverage — see
 1. **It does not judge appearance.** CI runners have no GPU. The renderer tests
    rasterise and count painted pixels, which catches "wired wrong and drew
    nothing", not "drew it wrong". Eyes are still required for that.
-2. **It only proves the features the assets use.** The 51 assets exercise
-   sprites, skinned and FFD meshes, nested armatures, static IK and skin
-   swapping. A feature no asset uses is a feature no test covers.
+2. **It only proves the features the assets use.** The 56 assets exercise
+   sprites, skinned and FFD meshes, nested armatures, static **and animated** IK,
+   skin swapping, `Surface` deformation and animation blending. A feature no
+   asset uses is a feature no test covers — path constraints are the remaining
+   case.
 3. **The mesh oracle is the Egret binding, not the core runtime.** In
    DragonBones the per-vertex deformation lives in the *engine binding*:
    `Slot._updateMesh` is abstract and the core never implements it. The
@@ -175,7 +179,7 @@ coverage — see
 
 ### Coverage
 
-51 assets, deliberately a ladder rather than a random dump:
+56 assets, deliberately a ladder rather than a random dump:
 
 | Fixture | Bones | Slots | What it brings |
 | --- | ---: | ---: | --- |
@@ -183,18 +187,22 @@ coverage — see
 | `龙` | 60 | 29 | 5 deform meshes (2 skinned), FFD timeline, IK |
 | `mecha_1004d` | 20 | 18 | 4 armatures in one file, 3 nested in slots, 10 animations |
 | `unity/*` (44 assets) | 1–70 | 1–96 | the whole DragonBones Unity SDK demo set: nested armatures, skinned meshes, FFD, **active IK**, skin swapping |
+| `features/ik` | 4 | 0 | hand-authored **animated IK**: weight and `bendPositive` keyed over the clip |
+| `features/shizuku` | 135 | 131 | **117 `Surface` bones** and animation blending (`blendType: "1d"` with `AnimationProgress` child states) |
 
 The first three come from [Godot-DragonBones](https://github.com/DragonBones/Godot-DragonBones);
 the 44 come from the
 [DragonBones Unity SDK](https://github.com/DragonBones/DragonBonesUnity)
 (`Assets/DragonBones/Demos/Resources`). Both are animation *data*, MIT-licensed.
+`shizuku` is the official EyeTracking demo, exported at format 5.6.
 
 Notably, `you_xin/body` alone is 71 frames, 70 bones, 6,816 slot draw data and
-47,357 mesh values in a single asset.
+47,357 mesh values in a single asset. `shizuku` is 135 bones and 131 slots per
+frame, so its dumps are capped at 12 frames (a full clip would be 21 MB).
 
 ## Limitations
 
-The honest list, for 0.3.0. Everything here is *parsed* but not *evaluated* —
+The honest list, for 0.4.0. Everything here is *parsed* but not *evaluated* —
 which means a file using it will load and mostly animate, then be subtly wrong
 rather than crash loudly. That is the dangerous kind, so it is spelled out.
 
@@ -202,10 +210,7 @@ rather than crash loudly. That is the dangerous kind, so it is spelled out.
 
 | Feature | Status | What breaks |
 | --- | --- | --- |
-| **IK constraint timelines** (`IKConstraintTimelineState`) | not ported | **Static** IK is applied and verified. **Animated** IK weight/bend is ignored — a rig that animates its IK targets will drift. `_updateTimelines()` is a no-op. |
 | **Path constraints** (`PathConstraint`) | data parsed, never built | Bones meant to follow a path do not. |
-| **`Surface` bones** (`SurfaceTimelineState`) | model only | `SurfaceData`/`Surface` exist; the timeline is never created, so surfaces do not deform. |
-| **Animation blend timelines** (`AnimationProgress`, `AnimationWeight`, `AnimationParameter`) | not ported | Blending between animations (`AnimationBlendType`) is not evaluated. |
 | **Binary `.dragonbones` input** (`BinaryDataParser`) | not ported | JSON export only. |
 
 ### Approximated in the renderer
@@ -243,22 +248,30 @@ Ordered by what a real game project would hit first.
       the `start` / `loopComplete` / `complete` / `fade*` hooks, `gotoAndPlay`
       actions, and child-armature propagation — verified against the official
       runtime as an event sequence (47 fixtures, 174 scenarios, 1,919 events).
-- [ ] **`IKConstraintTimelineState`.** Static IK is solved and verified; an
-      *animated* IK weight/bend is not. `_updateTimelines()` is a no-op, so a rig
-      that animates its IK is silently wrong.
+- [x] **`IKConstraintTimelineState`.** Done in 0.4.0: animated IK weight and
+      bend are applied, verified frame by frame against the official runtime
+      with a hand-authored fixture (`features/ik`). Note that upstream reads the
+      start-of-segment value, so the weight steps at frame boundaries instead of
+      tweening — the port reproduces that on purpose.
 - [x] **`SlotZIndex` timeline.** Done in `[NEXT]`: the armature re-sorts its
       slots when the z-index changes, verified against the official runtime.
 - [x] **`SlotAlpha` / `BoneAlpha` timelines.** Done in `[NEXT]`: both are wired
       into the timeline switch and verified against the official runtime (a
       hand-authored fixture, since the SDK demos predate alpha timelines).
-- [ ] **`PathConstraint` and `Surface` bones.** Both are parsed: `PathConstraint`
-      is skipped and `Surface` bones are built as plain bones, so neither deforms
-      its geometry.
+- [x] **`Surface` bones.** Done in 0.4.0: `Surface` is a full port (vertex grid,
+      per-cell affine transforms, hull cache) and `SurfaceTimelineState` deforms
+      it. Verified with the official EyeTracking demo, 117 surface bones.
+- [x] **Animation blend timelines.** Done in 0.4.0: `AnimationProgress`,
+      `AnimationWeight` and `AnimationParameter` drive child animation states,
+      including `AnimationBlendType.E1D`. Verified on the same demo.
+- [ ] **`PathConstraint`.** `PathConstraintData` is parsed but the runtime class
+      is never built, so a bone meant to travel along a path stays put. No
+      fixture in the set uses one.
 
-`test/fixtures/features/` holds the assets for the remaining items — `shizuku`
-(Surface and animation blend) and a `.dbbin` container, fetched by
-`tool/ground_truth/fetch_features.sh` — plus the hand-authored `alpha` and
-`zindex` fixtures, which are already in the oracle sweep.
+`test/fixtures/features/` holds the assets for the remaining item — `shizuku`
+and the `.dbbin` container among them — fetched by
+`tool/ground_truth/fetch_features.sh`, plus the hand-authored `alpha`, `zindex`
+and `ik` fixtures, which are already in the oracle sweep.
 
 **Wanted, not blocking**
 
@@ -292,7 +305,7 @@ tool/ground_truth/run_all.sh         regenerates every reference dump
 tool/ground_truth/out/*.json         committed reference dumps (the whole sweep)
 test/fixtures/                       hand-picked assets used by both sides
 test/fixtures/unity/                 Unity SDK sweep (JSON committed, PNGs not)
-test/fixtures/features/              staged assets for unimplemented features
+test/fixtures/features/              feature fixtures (alpha, zindex, ik, shizuku, dbbin)
 packages/dragonbones/                pure Dart runtime (no deps, no Flutter)
 packages/dragonbones_flutter/        Canvas renderer: update() + render()
 example/                             minimal Flutter app (Dragon / mecha / 龙)
@@ -347,14 +360,14 @@ atlas's `SubTexture` regions verified against the real PNG
 
 ## Releases
 
-Both packages are on pub.dev. `dragonbones` `0.3.0` is released; the renderer's
-`0.4.0` is prepared in this repository, waiting for its release commit. Its
-CHANGELOG entry says what it adds.
+Both packages are on pub.dev. The runtime's `0.4.0` is prepared in this
+repository, waiting for its release commit; the renderer's `0.4.0` is published.
+The runtime must go first — the renderer's next release will depend on it.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| `dragonbones` | `0.3.0` | `0.3.0` |
-| `dragonbones_flutter` | `0.3.0` | `0.4.0` |
+| `dragonbones` | `0.3.0` | `0.4.0` |
+| `dragonbones_flutter` | `0.4.0` | `0.4.0` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,
