@@ -360,14 +360,15 @@ atlas's `SubTexture` regions verified against the real PNG
 
 ## Releases
 
-Both packages are on pub.dev. The runtime's `0.4.0` is prepared in this
-repository, waiting for its release commit; the renderer's `0.4.0` is published.
-The runtime must go first — the renderer's next release will depend on it.
+Both packages are on pub.dev. The runtime's `0.4.0` is published; the renderer's
+`0.4.1` is prepared in this repository, waiting for its release commit — it raises
+the runtime range to `^0.4.0` so animated IK, `Surface` bones and animation
+blending actually reach the renderer.
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| `dragonbones` | `0.3.0` | `0.4.0` |
-| `dragonbones_flutter` | `0.4.0` | `0.4.0` |
+| `dragonbones` | `0.4.0` | `0.4.0` |
+| `dragonbones_flutter` | `0.4.0` | `0.4.1` |
 
 A pub.dev release cannot be deleted, only retracted, so publishing stays a human
 decision rather than a CI side effect. The release sequence — the runtime first,
