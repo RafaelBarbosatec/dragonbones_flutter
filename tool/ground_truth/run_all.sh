@@ -40,6 +40,14 @@ node tool/ground_truth/dump.js "$FIX/features/alpha/alpha_ske.json" \
   "$FIX/features/alpha/alpha_tex.json" idle "$OUT/feature_alpha.json" alpha_test
 node tool/ground_truth/dump.js "$FIX/features/zindex/zindex_ske.json" \
   "$FIX/features/zindex/zindex_tex.json" idle "$OUT/feature_zindex.json" zindex_test
+node tool/ground_truth/dump.js "$FIX/features/ik/ik_ske.json" \
+  - idle "$OUT/feature_ik.json" ik_test
+# shizuku is 135 bones / 131 slots per frame; a full 4s clip is a 21 MB dump,
+# so only the first 12 frames are dumped (the checker uses the same cap).
+node tool/ground_truth/dump.js "$FIX/features/shizuku/shizuku_ske.json" \
+  - PARAM_BREATH "$OUT/feature_shizuku__PARAM_BREATH.json" shizuku 12
+node tool/ground_truth/dump.js "$FIX/features/shizuku/shizuku_ske.json" \
+  - B_BROW.03 "$OUT/feature_shizuku__B_BROW.03.json" shizuku 12
 
 # ------------------------------------------------------------ Unity SDK sweep
 # Every demo asset from DragonBones/DragonBonesUnity, one dump each.

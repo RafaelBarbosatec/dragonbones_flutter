@@ -160,6 +160,7 @@ extension ArmatureDrawList on Armature {
           bones: slot.geometryBones,
           deformVertices: slot.deformVertices,
           scale: armatureScale,
+          surface: slot.parent is Surface ? slot.parent as Surface : null,
         );
       }
 

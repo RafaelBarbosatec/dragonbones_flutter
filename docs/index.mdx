@@ -22,8 +22,9 @@ Flutter**. This project closes that gap.
   Both packages are on pub.dev:
   [`dragonbones`](https://pub.dev/packages/dragonbones) (the runtime) and
   [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) (the
-  renderer). The runtime's `0.3.0` is released; the renderer's `0.4.0` is in the
-  repository, waiting for its release commit. For exactly what is missing, read
+  renderer). The renderer's `0.4.0` is released; the runtime's `0.4.0` is in the
+  repository, waiting for its release commit. It adds animated IK, `Surface`
+  bones and animation blending. For exactly what is missing, read
   [Limitations](/limitations): it is a short, specific list, not a vague
   disclaimer.
 </Info>
@@ -59,16 +60,17 @@ The claim this project makes is not "it works" but "it matches the official
 runtime, and here is the number". Measured on the current commit:
 
 ```text
-757701 numeric comparisons over 51 assets (51 clean, 0 failing)
-74245 mesh values, 1228 nested-armature slots
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
-51 assets replayed frame by frame — the whole DragonBones **Unity SDK** demo set
-plus a hand-picked ladder — comparing every bone matrix, every slot's draw data,
-every posed mesh vertex and UV, and every flattened nested-armature slot against
-the official runtime. Worst-case error is ~5e-7, which is the rounding precision
-of the reference dumps themselves.
+56 assets replayed frame by frame — the whole DragonBones **Unity SDK** demo set
+plus a hand-picked ladder and the feature fixtures (animated IK, `Surface` bones,
+animation blending) — comparing every bone matrix, every slot's draw data, every
+posed mesh vertex and UV, and every flattened nested-armature slot against the
+official runtime. Worst-case error is ~5e-7, which is the rounding precision of
+the reference dumps themselves.
 
 <CardGroup cols={2}>
   <Card title="Getting started" icon="rocket" href="/getting-started">
@@ -89,14 +91,14 @@ of the reference dumps themselves.
 ## Is it good enough for my project?
 
 **Probably yes** if you are drawing animated characters with sprites and meshes,
-swapping skins and equipment, and mounting weapons or effects on bones. That is
-what is verified.
+swapping skins and equipment, mounting weapons or effects on bones, animating IK
+weights, deforming surfaces, or blending animations by parameter. That is what is
+verified.
 
 **Probably not yet** if you need:
 
-- **animation events** — firing damage, sounds or projectiles from a frame,
-- **animated IK**, or
-- **animated slot z-order or per-slot alpha**.
+- **path constraints** (bones following a path), or
+- **binary `.dragonbones`** input (JSON exports only).
 
 <Warning>
   Those gaps are *not evaluated* rather than *unsupported*, which is the

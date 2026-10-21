@@ -105,8 +105,8 @@ regions, posed mesh vertices, UVs, triangle indices and nested-armature
 composition:
 
 ```
-757701 numeric comparisons over 51 assets (51 clean, 0 failing)
-74245 mesh values, 1228 nested-armature slots
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
@@ -150,11 +150,12 @@ and the global `eventManager`:
 
 Inherited from the runtime (the renderer cannot draw what is not evaluated):
 
-- **Animated IK is ignored** — static IK works.
-- **Path constraints and `Surface` bones** are not evaluated.
+- **Path constraints** are not evaluated.
+- **Binary `.dragonbones`** input is not parsed (JSON only).
 
-(`SlotAlpha` / `BoneAlpha` — per-slot and per-bone fade — and `SlotZIndex` —
-animated draw order — **are** evaluated as of `[NEXT]`.)
+**Animated IK**, **`Surface` bones** and **animation blending** are evaluated as
+of runtime `0.4.0`. `SlotAlpha` / `BoneAlpha` and `SlotZIndex` are evaluated as
+of `0.3.0`.
 
 Specific to this package:
 

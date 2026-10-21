@@ -147,9 +147,9 @@ abstract class BaseFactory {
   /// @internal
   void _buildBones(BuildArmaturePackage dataPackage, Armature armature) {
     for (final boneData in dataPackage.armature!.sortedBones) {
-      // `Surface` (BoneType.Surface) is a milestone-2 feature; every bone in the
-      // supported fixtures is a plain bone.
-      final bone = Bone();
+      // Surface bones are a distinct class: they deform their vertices across a
+      // grid instead of composing a single matrix. Everything else is a bone.
+      final bone = boneData.type == BoneType.Surface ? Surface() : Bone();
       bone.init(boneData, armature);
     }
   }
@@ -342,6 +342,20 @@ abstract class BaseFactory {
   /// is not ported, which is why this takes a decoded object rather than bytes.
   DragonBonesData? parseDragonBonesData(dynamic rawData, [String? name, double scale = 1.0]) {
     final dragonBonesData = this._dataParser.parseDragonBonesData(rawData, scale);
+
+    // A skeleton may embed its texture atlases (`"textureAtlas"`), which is how
+    // the official runtime exposes them and how single-file exports are made.
+    while (true) {
+      final textureAtlasData = this._buildTextureAtlasData(null, null);
+
+      if (this._dataParser.parseTextureAtlasData(null, textureAtlasData, scale)) {
+        this.addTextureAtlasData(textureAtlasData, name);
+      } else {
+        textureAtlasData.returnToPool();
+        break;
+      }
+    }
+
     if (dragonBonesData != null) {
       this.addDragonBonesData(dragonBonesData, name);
     }

@@ -133,16 +133,17 @@ graph LR
 ### Results
 
 ```
-757701 numeric comparisons over 51 assets (51 clean, 0 failing)
-74245 mesh values, 1228 nested-armature slots
+1353695 numeric comparisons over 56 assets (56 clean, 0 failing)
+205259 mesh values, 1228 nested-armature slots
 RESULT: PASS
 ```
 
-The 51 runs are the hand-picked ladder (`Dragon` × 5 animations, `龙`, `mecha_1004d`)
-plus all **44** assets from the DragonBones **Unity SDK** demo set. Worst-case
-error is ~5e-7, which is the rounding precision of the dumps themselves; the
-peaks near 5e-5 are the nested-armature assets, where composing two matrices per
-child slot compounds the dumps' rounding.
+The 56 runs are the hand-picked ladder (`Dragon` × 5 animations, `龙`, `mecha_1004d`),
+all **44** assets from the DragonBones **Unity SDK** demo set, the hand-authored
+`alpha` / `zindex` / `ik` feature fixtures, and two `shizuku` runs (Surface and
+blend). Worst-case error is ~5e-7, which is the rounding precision of the dumps
+themselves; the peaks near 5e-5 are the nested-armature assets, where composing
+two matrices per child slot compounds the dumps' rounding.
 
 ### The mesh oracle caveat
 

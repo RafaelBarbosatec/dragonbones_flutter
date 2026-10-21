@@ -7,12 +7,13 @@ Both packages are on pub.dev:
 
 | Package | Published | In this repository |
 | --- | --- | --- |
-| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.3.0 | 0.3.0 |
-| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.3.0 | **0.4.0**, pending release |
+| [`dragonbones`](https://pub.dev/packages/dragonbones) | 0.3.0 | **0.4.0**, pending release |
+| [`dragonbones_flutter`](https://pub.dev/packages/dragonbones_flutter) | 0.4.0 | 0.4.0 |
 
 A pub.dev release cannot be deleted — only retracted — so the trigger is always a
 human decision, never a CI side effect. This page is the release sequence for the
-next version.
+next version: `dragonbones` 0.4.0 first, then a renderer release that raises its
+dependency range to it.
 
 Check the current state at any time:
 
@@ -31,7 +32,9 @@ cd packages/dragonbones_flutter  && flutter pub publish --dry-run
 
 ## Why the order matters
 
-`dragonbones_flutter` depends on `dragonbones` through a **version range**:
+`dragonbones_flutter` depends on `dragonbones` through a **version range**
+(currently `^0.3.0`; the next renderer release raises it to the runtime version
+published in step 1):
 
 ```yaml
 dependencies:
@@ -72,7 +75,7 @@ cd ../dragonbones_flutter
 #    - bump `version:` in pubspec.yaml
 #    - rename `## [NEXT]` to that version in CHANGELOG.md
 #    - raise the dependency on the new runtime:
-#         dragonbones: ^0.3.0
+#         dragonbones: ^0.4.0   # the version published in step 1
 flutter pub get && flutter test
 flutter pub publish --dry-run
 flutter pub publish
@@ -142,9 +145,9 @@ package.
 Not blockers for a first release, but worth knowing. See
 [Limitations](/limitations) for the full, specific list:
 
-- **Animated IK**, **path constraints** and **`Surface` bones** are parsed but
-  not evaluated. No asset in the 53-asset test set needs them; a project that
-  does would hit a wall.
+- **Path constraints** and **binary `.dragonbones`** are parsed (or not) but not
+  evaluated. No asset in the 56-asset test set needs them; a project that does
+  would hit a wall.
 - **Appearance is only eyeballed.** CI proves pixels are produced, not that the
   result looks right.
 - **No benchmarks.** Pooling was dropped, so allocation behaviour differs from

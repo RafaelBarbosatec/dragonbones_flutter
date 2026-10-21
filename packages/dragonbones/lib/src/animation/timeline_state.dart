@@ -863,3 +863,229 @@ class DeformTimelineState extends MutilpleValueTimelineState {
     }
   }
 }
+
+/// @internal
+///
+/// Animated IK: blends `bendPositive` and `weight` from the timeline into the
+/// constraint and invalidates the bones it drives, so the pose is re-solved on
+/// the next armature update.
+///
+/// Faithful port of `.ref/dragonBones-ts/animation/TimelineState.ts`
+/// (`IKConstraintTimelineState`). The static data (`IKConstraintData.weight` /
+/// `bendPositive`) is what used to be applied unconditionally; with no timeline
+/// data (a pose timeline) it restores exactly that.
+class IKConstraintTimelineState extends DoubleValueTimelineState {
+  @override
+  void _onUpdateFrame() {
+    super._onUpdateFrame();
+
+    final ikConstraint = this.target as IKConstraint;
+
+    if (this._timelineData != null) {
+      // Upstream reads `_currentA` / `_currentB`, i.e. the value the timeline
+      // arrived at the *start* of the segment — not the interpolated
+      // `_resultA` / `_resultB`. The consequence is that an animated IK weight
+      // steps at frame boundaries instead of tweening, and a non-tween frame
+      // never applies (its `_current` is never filled). That is upstream's
+      // behaviour, verified frame by frame against it, so it is reproduced here
+      // rather than "fixed" into a silent divergence.
+      ikConstraint._bendPositive = this._currentA > 0.0;
+      ikConstraint._weight = this._currentB;
+    } else {
+      final ikConstraintData = ikConstraint._constraintData as IKConstraintData;
+      ikConstraint._bendPositive = ikConstraintData.bendPositive;
+      ikConstraint._weight = ikConstraintData.weight;
+    }
+
+    ikConstraint.invalidUpdate();
+    this.dirty = false;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    this._valueOffset = this._animationData!.frameIntOffset;
+    this._valueScale = 0.01;
+    this._valueArray = this._animationData!.parent!.parent!.frameIntArray;
+  }
+}
+
+/// @internal
+///
+/// Animated surface deformation (`Surface` bones). Blends the frame's deform
+/// values into [Surface._deformVertices] and marks the surface transform dirty,
+/// which makes it rebuild its vertices and affine matrices.
+///
+/// Faithful port of `.ref/dragonBones-ts/animation/TimelineState.ts`
+/// (`SurfaceTimelineState`). The value layout is the same one
+/// [DeformTimelineState] uses.
+class SurfaceTimelineState extends MutilpleValueTimelineState {
+  int _deformCount = 0;
+  int _deformOffset = 0;
+  int _sameValueOffset = 0;
+
+  @override
+  void _onClear() {
+    super._onClear();
+
+    this._deformCount = 0;
+    this._deformOffset = 0;
+    this._sameValueOffset = 0;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    if (this._timelineData != null) {
+      final dragonBonesData = this._animationData!.parent!.parent!;
+      final frameIntArray = dragonBonesData.frameIntArray!;
+      final frameIntOffset = this._animationData!.frameIntOffset +
+          this._timelineArray![this._timelineData!.offset + BinaryOffset.TimelineFrameValueCount] as int;
+
+      this._valueOffset = this._animationData!.frameFloatOffset;
+      this._valueCount = frameIntArray[frameIntOffset + BinaryOffset.DeformValueCount];
+      this._deformCount = frameIntArray[frameIntOffset + BinaryOffset.DeformCount];
+      this._deformOffset = frameIntArray[frameIntOffset + BinaryOffset.DeformValueOffset];
+      this._sameValueOffset =
+          frameIntArray[frameIntOffset + BinaryOffset.DeformFloatOffset] + this._animationData!.frameFloatOffset;
+      this._valueScale = this._armature!.armatureData.scale;
+      this._valueArray = dragonBonesData.frameFloatArray;
+
+      // Upstream does `this._rd.length = valueCount * 2`; Dart needs the slots
+      // to exist before writing.
+      this._rd.clear();
+      for (var i = 0, l = this._valueCount * 2; i < l; ++i) {
+        this._rd.add(0.0);
+      }
+    } else {
+      this._deformCount = ((this.target as BlendState).target as Surface)._deformVertices.length;
+    }
+  }
+
+  @override
+  void blend(bool isDirty) {
+    final BlendState blendState = this.target as BlendState;
+    final Surface surface = blendState.target as Surface;
+    final double blendWeight = blendState.blendWeight;
+    final List<double> result = surface._deformVertices;
+    final List<num>? valueArray = this._valueArray;
+
+    if (valueArray != null) {
+      final int valueCount = this._valueCount;
+      final int deformOffset = this._deformOffset;
+      final int sameValueOffset = this._sameValueOffset;
+      final List<double> rd = this._rd;
+
+      for (var i = 0; i < this._deformCount; ++i) {
+        double value;
+
+        if (i < deformOffset) {
+          value = valueArray[sameValueOffset + i].toDouble();
+        } else if (i < deformOffset + valueCount) {
+          value = rd[i - deformOffset];
+        } else {
+          value = valueArray[sameValueOffset + i - valueCount].toDouble();
+        }
+
+        if (blendState.dirty > 1) {
+          result[i] += value * blendWeight;
+        } else {
+          result[i] = value * blendWeight;
+        }
+      }
+    } else if (blendState.dirty == 1) {
+      for (var i = 0; i < this._deformCount; ++i) {
+        result[i] = 0.0;
+      }
+    }
+
+    if (isDirty || this.dirty) {
+      this.dirty = false;
+      surface._transformDirty = true;
+    }
+  }
+}
+
+/// @internal
+///
+/// Drives the time of a child animation state from a blend node's timeline
+/// (`AnimationBlendType`). Faithful port of the upstream
+/// `AnimationProgressTimelineState`.
+class AnimationProgressTimelineState extends SingleValueTimelineState {
+  @override
+  void _onUpdateFrame() {
+    super._onUpdateFrame();
+
+    final animationState = this.target as AnimationState;
+    if (animationState._parent != null) {
+      animationState.currentTime = this._result * animationState.totalTime;
+    }
+
+    this.dirty = false;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    this._valueOffset = this._animationData!.frameIntOffset;
+    this._valueScale = 0.0001;
+    this._valueArray = this._animationData!.parent!.parent!.frameIntArray;
+  }
+}
+
+/// @internal
+///
+/// Drives the weight of a child animation state from a blend node's timeline.
+class AnimationWeightTimelineState extends SingleValueTimelineState {
+  @override
+  void _onUpdateFrame() {
+    super._onUpdateFrame();
+
+    final animationState = this.target as AnimationState;
+    if (animationState._parent != null) {
+      animationState.weight = this._result;
+    }
+
+    this.dirty = false;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    this._valueOffset = this._animationData!.frameIntOffset;
+    this._valueScale = 0.0001;
+    this._valueArray = this._animationData!.parent!.parent!.frameIntArray;
+  }
+}
+
+/// @internal
+///
+/// Drives the 2D parameter of a child animation state from a blend node's
+/// timeline (`E1D` / `E2D` blend types).
+class AnimationParametersTimelineState extends DoubleValueTimelineState {
+  @override
+  void _onUpdateFrame() {
+    super._onUpdateFrame();
+
+    final animationState = this.target as AnimationState;
+    if (animationState._parent != null) {
+      animationState.parameterX = this._resultA;
+      animationState.parameterY = this._resultB;
+    }
+
+    this.dirty = false;
+  }
+
+  @override
+  void init(Armature armature, AnimationState animationState, TimelineData? timelineData) {
+    super.init(armature, animationState, timelineData);
+
+    this._valueOffset = this._animationData!.frameIntOffset;
+    this._valueScale = 0.0001;
+    this._valueArray = this._animationData!.parent!.parent!.frameIntArray;
+  }
+}

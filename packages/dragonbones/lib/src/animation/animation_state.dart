@@ -189,8 +189,35 @@ class AnimationState extends BaseObject {
   }
 
   void _updateTimelines() {
-    // Milestone 2: IK/path constraint timelines are not ported. The fixtures
-    // used by milestone 1 declare no constraints, so this is a no-op.
+    // Update constraint timelines.
+    for (final constraint in this._armature!._constraints) {
+      final timelineDatas = this._animationData!.getConstraintTimelines(constraint.name);
+
+      if (timelineDatas != null) {
+        for (final timelineData in timelineDatas) {
+          switch (timelineData.type) {
+            case TimelineType.IKConstraint:
+              {
+                final timeline = IKConstraintTimelineState();
+                timeline.target = constraint;
+                timeline.init(this._armature!, this, timelineData);
+                this._constraintTimelines.add(timeline);
+                break;
+              }
+
+            default:
+              break;
+          }
+        }
+      } else if (this.resetToPose) {
+        // Pose timeline.
+        final timeline = IKConstraintTimelineState();
+        timeline.target = constraint;
+        timeline.init(this._armature!, this, null);
+        this._constraintTimelines.add(timeline);
+        this._poseTimelines.add(timeline);
+      }
+    }
   }
 
   void _updateBoneAndSlotTimelines() {
@@ -270,18 +297,34 @@ class AnimationState extends BaseObject {
                     break;
                   }
 
-                // Milestone 2: Surface timelines are not ported.
+                case TimelineType.Surface:
+                  {
+                    final timeline = SurfaceTimelineState();
+                    timeline.target = this._armature!.animation.getBlendState(BlendState.SURFACE, bone.name, bone);
+                    timeline.init(this._armature!, this, timelineData);
+                    this._boneBlendTimelines.add(timeline);
+                    break;
+                  }
+
                 default:
                   break;
               }
             }
           } else if (this.resetToPose) {
             // Pose timeline.
-            final timeline = BoneAllTimelineState();
-            timeline.target = blendState;
-            timeline.init(this._armature!, this, null);
-            this._boneTimelines.add(timeline);
-            this._poseTimelines.add(timeline);
+            if (bone._boneData!.type == BoneType.Bone) {
+              final timeline = BoneAllTimelineState();
+              timeline.target = blendState;
+              timeline.init(this._armature!, this, null);
+              this._boneTimelines.add(timeline);
+              this._poseTimelines.add(timeline);
+            } else {
+              final timeline = SurfaceTimelineState();
+              timeline.target = this._armature!.animation.getBlendState(BlendState.SURFACE, bone.name, bone);
+              timeline.init(this._armature!, this, null);
+              this._boneBlendTimelines.add(timeline);
+              this._poseTimelines.add(timeline);
+            }
           }
         }
       }
@@ -1032,8 +1075,52 @@ class AnimationState extends BaseObject {
 
   /// @private
   void addState(AnimationState animationState, [List<TimelineData>? timelineDatas]) {
-    // Milestone 2: blend animation nodes (AnimationProgress/Weight/Parameter
-    // timelines) are not ported.
+    if (timelineDatas != null) {
+      for (final timelineData in timelineDatas) {
+        switch (timelineData.type) {
+          case TimelineType.AnimationProgress:
+            {
+              final timeline = AnimationProgressTimelineState();
+              timeline.target = animationState;
+              timeline.init(this._armature!, this, timelineData);
+              this._animationTimelines.add(timeline);
+
+              if (this.blendType != AnimationBlendType.None) {
+                final animationTimelineData = timelineData as AnimationTimelineData;
+                animationState.positionX = animationTimelineData.x;
+                animationState.positionY = animationTimelineData.y;
+                animationState.weight = 0.0;
+              }
+
+              animationState._parent = this;
+              this.resetToPose = false;
+              break;
+            }
+
+          case TimelineType.AnimationWeight:
+            {
+              final timeline = AnimationWeightTimelineState();
+              timeline.target = animationState;
+              timeline.init(this._armature!, this, timelineData);
+              this._animationTimelines.add(timeline);
+              break;
+            }
+
+          case TimelineType.AnimationParameter:
+            {
+              final timeline = AnimationParametersTimelineState();
+              timeline.target = animationState;
+              timeline.init(this._armature!, this, timelineData);
+              this._animationTimelines.add(timeline);
+              break;
+            }
+
+          default:
+            break;
+        }
+      }
+    }
+
     if (animationState._parent == null) {
       animationState._parent = this;
     }

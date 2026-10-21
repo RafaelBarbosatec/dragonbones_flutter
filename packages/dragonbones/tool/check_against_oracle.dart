@@ -37,7 +37,8 @@ double _r(num v) => v.toDouble();
 
 /// One oracle dump to check, and how to reproduce the state it captures.
 class Target {
-  const Target(this.dump, this.skeletonPath, this.texturePath, this.armature, this.animation, this.label);
+  const Target(this.dump, this.skeletonPath, this.texturePath, this.armature, this.animation, this.label,
+      [this.maxFrames = 0]);
 
   final String dump;
 
@@ -54,6 +55,10 @@ class Target {
   final String? animation;
 
   final String label;
+
+  /// Caps the sampled frames for very large assets, and must match the cap the
+  /// dump was generated with (0 = no cap).
+  final int maxFrames;
 }
 
 const String _fixtures = 'test/fixtures';
@@ -80,6 +85,21 @@ const List<Target> namedTargets = <Target>[
   // timeline moves `front` ahead of `back` and back again.
   Target('feature_zindex', '$_fixtures/features/zindex/zindex_ske.json', '$_fixtures/features/zindex/zindex_tex.json',
       'zindex_test', 'idle', 'zindex'),
+  // Animated IK, hand-authored: a two-bone chain whose target moves while the
+  // IK timeline animates weight (0 → 1 → 0.5) and bendPositive. Static IK is
+  // already covered by `龙` and the `you_xin` characters; this is the animated
+  // case, which no SDK fixture exercises.
+  Target('feature_ik', '$_fixtures/features/ik/ik_ske.json', '-', 'ik_test', 'idle', 'ik'),
+  // Surface bones: the official EyeTracking demo has 117 Surface bones and a
+  // Surface timeline (B_BODY.04). Only the first 12 frames are dumped — a full
+  // clip is 21 MB (135 bones, 131 slots per frame) — but the deform is constant
+  // across the clip, so the geometry is fully exercised.
+  Target('feature_shizuku__PARAM_BREATH', '$_fixtures/features/shizuku/shizuku_ske.json', '-', 'shizuku',
+      'PARAM_BREATH', 'shizuku-surface', 12),
+  // Animation blending: `blendType: "1d"` plus AnimationProgress timelines that
+  // start three child animation states and drive their time.
+  Target('feature_shizuku__B_BROW.03', '$_fixtures/features/shizuku/shizuku_ske.json', '-', 'shizuku', 'B_BROW.03',
+      'shizuku-blend', 12),
 ];
 
 /// One entry per `out/unity__*.json`, resolved back to its source files.
@@ -156,7 +176,10 @@ List<Map<String, dynamic>> sampleFrames(
   final frameRate = built.armatureData.frameRate;
   final state = built.animation.lastAnimationState;
   final duration = state != null ? state.totalTime : 0.0;
-  final lastFrame = (duration * frameRate).round();
+  var lastFrame = (duration * frameRate).round();
+  if (target.maxFrames > 0 && lastFrame > target.maxFrames) {
+    lastFrame = target.maxFrames;
+  }
   final frames = <Map<String, dynamic>>[];
 
   for (var f = 0; f <= (lastFrame < 1 ? 1 : lastFrame); f++) {
